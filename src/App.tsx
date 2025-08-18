@@ -9,7 +9,6 @@ import { ChainDetail } from './components/ChainDetail';
 import { GroupView } from './components/GroupView';
 import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
 import WindowControls from './components/WindowControls'; // 添加这一行导入
-import { UpdateNotification } from './components/UpdateNotification';
 import { storage as localStorageUtils } from './utils/storage';
 
 import { isSupabaseConfigured } from './lib/supabase';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Info, Download, RefreshCw, Settings2, ExternalLink } from 'lucide-react';
+import { Info, RefreshCw, Settings2, ExternalLink } from 'lucide-react';
 import { userPreferences } from '../utils/userPreferences';
 
 interface AboutSectionProps {
