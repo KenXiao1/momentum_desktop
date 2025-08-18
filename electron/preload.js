@@ -43,6 +43,14 @@ try {
     backup: {
       createZip: (sourceDir, outputPath, excludeFiles) => ipcRenderer.invoke('backup:create-zip', sourceDir, outputPath, excludeFiles),
       extractZip: (zipPath, outputDir) => ipcRenderer.invoke('backup:extract-zip', zipPath, outputDir),
+    },
+    update: {
+      checkStatus: () => ipcRenderer.invoke('update:check-status'),
+      checkManual: () => ipcRenderer.invoke('update:check-manual'),
+      download: () => ipcRenderer.invoke('update:download'),
+    },
+    app: {
+      getVersion: () => ipcRenderer.invoke('app:get-version'),
     }
   });
   

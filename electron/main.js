@@ -13,6 +13,10 @@ import StreamZip from 'node-stream-zip';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// 自动更新配置
+let updateAvailable = false;
+let updateInfo = null;
+
 // 保持对主窗口和系统托盘的全局引用
 let mainWindow;
 let tray = null;
@@ -162,10 +166,81 @@ function createTray() {
   });
 }
 
+// 自动更新相关函数
+async function checkForUpdates() {
+  try {
+    // 检查是否为生产环境
+    if (process.env.NODE_ENV === 'development') {
+      console.log('开发环境，跳过自动更新检查');
+      return;
+    }
+
+    const currentVersion = app.getVersion();
+    console.log('当前版本:', currentVersion);
+    
+    // 从GitHub API获取最新版本信息
+    const response = await fetch('https://api.github.com/repos/enshulv/momentum_desktop/releases/latest');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const releaseData = await response.json();
+    const latestVersion = releaseData.tag_name.replace('v', '');
+    
+    console.log('最新版本:', latestVersion);
+    
+    // 比较版本号
+    if (isNewerVersion(latestVersion, currentVersion)) {
+      updateAvailable = true;
+      updateInfo = {
+        version: latestVersion,
+        releaseNotes: releaseData.body || '新版本可用',
+        downloadUrl: releaseData.html_url,
+        assets: releaseData.assets
+      };
+      
+      // 通知渲染进程有更新可用
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('update-available', updateInfo);
+      }
+      
+      console.log('发现新版本:', latestVersion);
+    } else {
+      console.log('当前已是最新版本');
+    }
+  } catch (error) {
+    console.error('检查更新失败:', error);
+  }
+}
+
+function isNewerVersion(latest, current) {
+  const latestParts = latest.split('.').map(Number);
+  const currentParts = current.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+    const latestPart = latestParts[i] || 0;
+    const currentPart = currentParts[i] || 0;
+    
+    if (latestPart > currentPart) {
+      return true;
+    } else if (latestPart < currentPart) {
+      return false;
+    }
+  }
+  
+  return false;
+}
+
 // 当Electron完成初始化并准备创建浏览器窗口时调用
 app.on('ready', () => {
   createWindow();
   createTray();
+  
+  // 延迟3秒后检查更新（等待应用完全加载）
+  setTimeout(() => {
+    checkForUpdates();
+  }, 3000);
 });
 
 // 所有窗口关闭时的处理（因为有系统托盘，所以不自动退出）
@@ -457,4 +532,47 @@ async function removeDirectory(dirPath) {
 // 删除目录及其内容
 ipcMain.handle('storage:remove-directory', async (event, dirPath) => {
   return await removeDirectory(dirPath);
+});
+
+// 更新相关IPC处理程序
+
+// 检查更新状态
+ipcMain.handle('update:check-status', () => {
+  return {
+    updateAvailable,
+    updateInfo
+  };
+});
+
+// 手动检查更新
+ipcMain.handle('update:check-manual', async () => {
+  await checkForUpdates();
+  return {
+    updateAvailable,
+    updateInfo
+  };
+});
+
+// 开始下载更新
+ipcMain.handle('update:download', async () => {
+  if (!updateInfo) {
+    return { success: false, error: '没有可用的更新' };
+  }
+  
+  try {
+    // 在实际应用中，这里会使用electron-updater来下载
+    // 现在我们只是打开下载页面
+    const { shell } = await import('electron');
+    await shell.openExternal(updateInfo.downloadUrl);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('打开下载页面失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 获取应用版本
+ipcMain.handle('app:get-version', () => {
+  return app.getVersion();
 });

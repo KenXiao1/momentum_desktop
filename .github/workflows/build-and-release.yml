@@ -1,0 +1,137 @@
+name: 构建和发布桌面应用
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - new-feature-branch
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 设置Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: 安装依赖
+        run: npm ci
+      
+      - name: 运行安全检查
+        run: npm audit
+      
+      - name: 运行代码检查
+        run: npm run lint
+      
+      - name: 构建应用
+        run: npm run build
+      
+      - name: 构建Electron应用 (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 构建Electron应用 (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      
+      - name: 构建Electron应用 (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run electron:build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist_electron/
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: dist_electron/
+      
+      - name: 创建发布说明
+        id: release_notes
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+            head -n 50 CHANGELOG.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_NOTES=自动构建的发布版本" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 创建GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist_electron/**/*.exe
+            dist_electron/**/*.dmg
+            dist_electron/**/*.AppImage
+            dist_electron/**/*.deb
+            dist_electron/**/*.rpm
+          body: |
+            ## 🚀 新版本发布
+            
+            ${{ steps.release_notes.outputs.RELEASE_NOTES }}
+            
+            ### 📦 下载链接
+            - **Windows**: `.exe` 安装包
+            - **macOS**: `.dmg` 镜像文件
+            - **Linux**: `.AppImage` 可执行文件
+            
+            ### 🔄 自动更新
+            如果您已经安装了之前的版本，应用会自动检测并提示更新。
+            
+            ### 📝 完整更新日志
+            请查看 [提交历史](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) 了解详细变更。
+          
+          tag_name: ${{ github.ref_name }}
+          name: Momentum Desktop ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: 发送构建通知
+        run: |
+          echo "✅ Momentum Desktop ${{ github.ref_name }} 构建完成！"
+          echo "📦 发布地址: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"

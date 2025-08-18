@@ -435,3 +435,74 @@ export interface AppState {
   exceptionRules: ExceptionRule[];
   ruleUsageRecords: RuleUsageRecord[];
 }
+
+// 更新相关接口
+export interface UpdateInfo {
+  version: string;
+  releaseNotes: string;
+  downloadUrl: string;
+  assets: unknown[];
+}
+
+export interface UpdateStatus {
+  updateAvailable: boolean;
+  updateInfo: UpdateInfo | null;
+}
+
+export interface UpdateDownloadResult {
+  success: boolean;
+  error?: string;
+}
+
+// 全局声明，用于在TypeScript中访问Electron API
+declare global {
+  interface Window {
+    electron?: {
+      ipcRenderer: {
+        send: (channel: string, ...args: unknown[]) => void;
+        on: (channel: string, listener: (...args: unknown[]) => void) => () => void;
+        once: (channel: string, listener: (...args: unknown[]) => void) => () => void;
+        removeListener: (channel: string, listener: (...args: unknown[]) => void) => void;
+      };
+    };
+    electronAPI?: {
+      storage: {
+        getDefaultDataPath: () => Promise<string>;
+        selectDataDirectory: () => Promise<string | null>;
+        directoryExists: (path: string) => Promise<boolean>;
+        createDirectory: (path: string) => Promise<boolean>;
+        readFile: (path: string) => Promise<unknown>;
+        writeFile: (path: string, data: unknown) => Promise<boolean>;
+        deleteFile: (path: string) => Promise<boolean>;
+        listDirectory: (path: string) => Promise<Array<{
+          name: string;
+          path: string;
+          isDirectory: boolean;
+          size: number;
+          modifiedAt: Date;
+        }>>;
+        copyFile: (sourcePath: string, destPath: string) => Promise<boolean>;
+        getFileStats: (path: string) => Promise<{
+          size: number;
+          createdAt: Date;
+          modifiedAt: Date;
+          isDirectory: boolean;
+          isFile: boolean;
+        } | null>;
+        removeDirectory: (path: string) => Promise<boolean>;
+      };
+      backup: {
+        createZip: (sourceDir: string, outputPath: string, excludeFiles?: string[]) => Promise<boolean>;
+        extractZip: (zipPath: string, outputDir: string) => Promise<boolean>;
+      };
+      update: {
+        checkStatus: () => Promise<UpdateStatus>;
+        checkManual: () => Promise<UpdateStatus>;
+        download: () => Promise<UpdateDownloadResult>;
+      };
+      app: {
+        getVersion: () => Promise<string>;
+      };
+    };
+  }
+}

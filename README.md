@@ -1,156 +1,206 @@
-[EN README](./README_EN.md)
-# Momentum - 心理学驱动的专注力应用
+# Momentum Desktop - 桌面版自控力提升工具 🖥️
 
-基于链式时延协议（CTDP）理论的自控力训练工具，通过"神圣座位原理"、"下必为例原理"和"线性时延原理"帮助用户建立强大的习惯链条。
-详情请见：
-https://www.zhihu.com/question/19888447/answer/1930799480401293785
-<br>
-<img width="3000" height="1130" alt="image" src="https://github.com/user-attachments/assets/8765b5c0-4f7a-4d69-a826-d7a6bcef853f" />
-你也可以在知乎上阅读此README：https://zhuanlan.zhihu.com/p/1932530006774505748
+<p align="center">
+  <img src="public/app-icon.png" alt="Momentum Logo" width="128" height="128">
+</p>
 
-## 🎯 核心理念
+<p align="center">
+  <strong>基于链式时延协议（CTDP）理论的跨平台桌面应用</strong><br>
+  通过"神圣座位原理"、"下必为例原理"和"线性时延原理"帮助用户建立强大的习惯链条
+</p>
 
-Momentum基于Edmond在知乎上提出的链式时延协议（Chained Time-Delay Protocol, CTDP）理论，通过数学模型解决自制力问题：
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platform Support">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/version-1.0.0-orange" alt="Version">
+</p>
 
-$$I = \int_{0}^{\infty} V(\tau) \cdot W(\tau) d\tau$$
+---
 
+## 📖 关于本分支
 
-其中：
-- `V(τ)` 是未来价值函数
-- `W(τ)` 是权重贴现函数
+本分支是从主分支分叉而来的**桌面版增强分支**，在保持核心CTDP理论不变的基础上，为用户提供了完整的跨平台桌面应用体验。
 
+### 🔗 核心功能介绍
+完整的CTDP理论、三大核心原理和基础功能介绍，请查看：
+- **[主分支README](https://github.com/yourusername/momentum/blob/main/README.md)** - 详细的理论介绍和核心功能
+- **[知乎文章](https://www.zhihu.com/question/19888447/answer/1930799480401293785)** - CTDP理论原文
+- **[理论详解](https://zhuanlan.zhihu.com/p/1932530006774505748)** - 完整的使用指南
 
-<img width="931" height="676" alt="image" src="https://github.com/user-attachments/assets/138e50b6-4421-40bb-a214-017c588d832e" />
+---
 
+## 🚀 桌面版新特性
 
+### ✨ 本地化体验
+- **🖥️ 原生桌面应用** - 基于Electron构建，支持Windows、macOS、Linux
+- **🎯 无边框设计** - 现代化的无边框窗口界面
+- **📱 系统托盘** - 支持后台运行，快速访问
+- **⚙️ 窗口控制** - 自定义最小化、最大化、关闭按钮
 
-## 🔬 三大核心原理
+### 💾 数据管理
+- **🗂️ 本地文件存储** - 支持本地数据存储，无需依赖网络
+- **☁️ 云端同步** - 可选的Supabase云端数据同步
+- **💾 数据备份** - 一键备份和恢复功能
+- **🔄 自动迁移** - 智能数据迁移和版本兼容
 
-### 1. 神圣座位原理
-通过指定特定的触发动作（如"戴上降噪耳机"、"坐到书房书桌前"），创建一个"神圣座位"。一旦触发这个动作，就必须以最好的状态完成专注任务。每次成功完成任务，链条记录增长（#1 → #2 → #3...），形成强大的心理约束力。
-<img width="1232" height="568" alt="image" src="https://github.com/user-attachments/assets/78cb2b9b-1eb1-4c0a-80d1-6a9500a3f4ab" />
-<img width="1442" height="1652" alt="image" src="https://github.com/user-attachments/assets/4c68a170-31c8-4404-a3ea-a670a7090f2e" />
-<img width="1178" height="1627" alt="image" src="https://github.com/user-attachments/assets/7b4593db-1c3e-414d-b0ea-24f55755cb56" />
+### ⏰ 增强提醒系统
+- **🔔 桌面通知** - 预约到期前3分钟桌面提醒
+- **📅 智能调度** - 高精度的任务调度系统
+- **⚡ 实时反馈** - 即时的任务状态更新
 
-### 2. 下必为例原理
-当面临疑似违规行为时，只能选择：
-- **判定失败**：链条清零，从#1重新开始
-- **判定允许**：该行为永久加入例外规则，未来必须一律允许
+### 🎨 界面优化
+- **🌙 深色模式** - 支持系统主题跟随
+- **📐 响应式设计** - 适配不同屏幕尺寸
+- **🖱️ 优化滚动** - 针对桌面环境优化的滚动体验
+- **⌨️ 快捷键支持** - 高效的键盘快捷操作
 
-这种"判例法"机制防止破窗效应，让规则边界收敛到最理性的状态。
-<img width="2880" height="1370" alt="image" src="https://github.com/user-attachments/assets/f360fc69-0f33-4aab-bb1a-d5092d3f6133" />
-<img width="1971" height="1551" alt="image" src="https://github.com/user-attachments/assets/692dda50-8265-4f56-97bd-11de5818ddcb" />
+### 🔄 自动更新系统
+- **📦 自动检测更新** - 应用启动时自动检查新版本
+- **🔔 更新提醒** - 顶部通知栏显示可用更新
+- **⚡ 一键更新** - 用户确认后自动下载和安装
+- **🛡️ 增量更新** - 智能增量更新，节省带宽
 
+---
 
-### 3. 线性时延原理
-通过"预约链"解决启动困难：
-- 设定预约信号（如"打响指"）
-- 预约后必须在指定时间内开始主任务
-- 利用时间延迟降低启动阻力<img width="911" height="890" alt="image" src="https://github.com/user-attachments/assets/247aec14-ec69-4fc7-aa14-112632814ca8" />
+## 📦 下载安装
 
-## 直接使用
-https://momentumctdp.netlify.app/
-<img width="1806" height="1218" alt="image" src="https://github.com/user-attachments/assets/6dcd2b1b-3cc8-4cc1-8e8c-57a2f97b1878" />
+### 📥 预编译版本
+从 [Releases页面](https://github.com/yourusername/momentum/releases) 下载适合你系统的版本：
 
+- **Windows**: `.exe` 安装包
+- **macOS**: `.dmg` 镜像文件  
+- **Linux**: `.AppImage` 可执行文件
 
-## 📖 使用指南
+### 🛠️ 从源码构建
 
-### 创建第一条链
-
-1. 点击"创建第一条链"或"新建链"
-2. 设置链名称（如"学习Python"）
-3. 选择神圣座位触发动作（如"戴上降噪耳机"）
-4. 设定任务时长
-5. 配置预约链设置：
-   - 预约信号（如"打响指"）
-   - 预约时长（如15分钟）
-   - 预约完成条件（通常与主链触发器相同）
-
-### 使用预约功能
-
-1. 在任务卡片上点击"预约"
-2. 执行预约信号（如打响指）
-3. 在预约时间内完成预约条件
-4. 自动进入专注模式
-
-### 直接开始任务
-
-1. 点击"开始任务"
-2. 执行神圣座位触发动作
-3. 进入全屏专注模式
-
-<img width="3181" height="1792" alt="image" src="https://github.com/user-attachments/assets/b2251bab-9876-4efa-a94f-4d6a6b8a8f2d" />
-
-4. 专注完成设定时长
-
-### 处理中断情况
-
-当需要中断任务时：
-1. 点击"中断/规则判定"
-2. 描述具体行为
-3. 选择处理方式：
-   - **判定失败**：链条清零
-   - **判定允许**：加入例外规则
-<img width="1107" height="1249" alt="image" src="https://github.com/user-attachments/assets/c4dee7e4-9448-47e0-9a95-9bd78de94ad5" />
-### 管理卡片
-<img width="1696" height="1632" alt="image" src="https://github.com/user-attachments/assets/058cb3a0-0eed-41a4-9413-f41fa8b849a7" />
-
-## 🚀 本地使用
-
-
-### 环境要求
+#### 环境要求
 - Node.js 18+ 
 - npm 或 yarn
+- Git
 
-### 安装步骤
-
-1. **克隆项目**
+#### 构建步骤
 ```bash
-git clone https://github.com/KenXiao1/momentum.git
+# 克隆仓库
+git clone https://github.com/yourusername/momentum.git
 cd momentum
-```
 
-2. **安装依赖**
-```bash
+# 安装依赖
 npm install
+
+# 开发模式运行
+npm run electron:dev
+
+# 构建生产版本
+npm run electron:build
 ```
 
-3. **启动开发服务器**
+---
+
+## 🔧 开发指南
+
+### 项目结构
+```
+momentum/
+├── electron/              # Electron主进程文件
+│   ├── main.js            # 主进程入口
+│   ├── preload.js         # 预加载脚本
+│   └── preload.mjs        # ES模块预加载脚本
+├── src/                   # React源码
+│   ├── components/        # React组件
+│   ├── services/          # 业务服务
+│   ├── utils/            # 工具函数
+│   └── styles/           # 样式文件
+├── public/               # 静态资源
+└── dist/                 # 构建输出目录
+```
+
+### 可用脚本
 ```bash
+# 开发模式（Web）
 npm run dev
-```
 
-4. **构建生产版本**
-```bash
+# 开发模式（Electron）
+npm run electron:dev
+
+# 构建Web版本
 npm run build
+
+# 构建Electron应用
+npm run electron:build
+
+# 代码检查
+npm run lint
 ```
 
-5. **预览生产版本**
-```bash
-npm run preview
-```
+### 自动更新配置
+
+应用集成了基于GitHub Releases的自动更新系统：
+
+1. **自动检测**: 应用启动时自动检查更新
+2. **用户提示**: 发现新版本时在界面顶部显示通知
+3. **确认下载**: 用户点击后显示更新确认对话框
+4. **自动安装**: 下载完成后提示重启应用
+
+更新检查基于 [Electron官方文档](https://www.electronjs.org/zh/docs/latest/tutorial/updates) 实现。
+
+---
+
+## 🔒 安全特性
+
+### Electron安全配置
+- ✅ **contextIsolation**: 启用上下文隔离
+- ✅ **nodeIntegration**: 禁用Node.js集成
+- ✅ **enableRemoteModule**: 禁用远程模块
+- ✅ **preload脚本**: 安全的主进程-渲染进程通信
+
+### 数据安全
+- 🔐 所有用户数据本地加密存储
+- 🛡️ 可选的云端数据端到端加密
+- 🔍 定期安全漏洞检查和修复
+
+---
+
+## 🤝 贡献指南
+
+欢迎为桌面版Momentum贡献代码！
+
+### 贡献流程
+1. Fork本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建Pull Request
+
+### 开发规范
+- 遵循TypeScript严格模式
+- 使用ESLint进行代码检查
+- 编写单元测试覆盖新功能
+- 更新相关文档
+
+---
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+本项目采用MIT许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-## TO DO
+---
 
-- [ ] **增加链式可嵌套工作单元**
-  *示意图：*
-  <img width="600" alt="嵌套单元示例1" src="https://github.com/user-attachments/assets/39522b04-f284-449b-80d5-21434862f3ee" />
-  <img width="600" alt="嵌套单元示例2" src="https://github.com/user-attachments/assets/f54b2816-9869-46bf-8714-bdaee0c6423e" />
+## 🙏 致谢
 
-- [ ] **增加开箱即用的预设**
-  - 如：考试周专用等
+- **理论基础**: 感谢Edmond提出的链式时延协议（CTDP）理论
+- **技术支持**: 基于Electron、React、TypeScript构建
+- **社区贡献**: 感谢所有贡献者和用户的反馈
 
-- [ ] **防止日常摆烂的改进版本（递归稳态迭代协议, RSIP）实现**
-  *示意图：*
-  <img width="700" alt="RSIP 设计图" src="https://github.com/user-attachments/assets/29b5274a-e207-476a-ba31-e45affb73bb6" />
+---
 
+## 📞 支持与反馈
 
-## 📞 联系方式
+- **问题报告**: [GitHub Issues](https://github.com/enshulv/momentum_desktop/issues)
+- **功能建议**: [GitHub Discussions](https://github.com/enshulv/momentum_desktop/discussions)
+- **文档问题**: 请直接提交PR或创建Issue
 
-如有问题或建议，发送邮件至：kenx@andrew.cmu.edu
-<br>
-我的知乎账号：https://www.zhihu.com/people/blues-68-53
+---
+
+<p align="center">
+  <strong>让我们一起用科学的方法提升自控力！🚀</strong>
+</p>
