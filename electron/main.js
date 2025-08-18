@@ -8,6 +8,7 @@ import os from 'os';
 import archiver from 'archiver';
 import { createWriteStream, createReadStream } from 'fs';
 import StreamZip from 'node-stream-zip';
+import { updateElectronApp } from 'update-electron-app';
 
 // 定义__dirname变量（ES模块中没有内置）
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +28,7 @@ function createWindow() {
     width: 1400,  // 设置默认宽度
     height: 800,  // 设置默认高度
     frame: false, // 无边框窗口
-    icon: path.join(__dirname, '../public/app-icon.png'), // 窗口图标
+    icon: path.join(__dirname, '../public/app-icon.ico'), // 窗口图标
     titleBarStyle: 'hiddenInset', // 隐藏标题栏但保留窗口控制按钮
     trafficLightPosition: { x: 15, y: 15 }, // macOS窗口按钮位置
     webPreferences: {
@@ -89,7 +90,7 @@ function createWindow() {
 // 创建系统托盘
 function createTray() {
   // 创建托盘图标
-  let trayIconPath = path.join(__dirname, '../public/app-icon.png');
+  let trayIconPath = path.join(__dirname, '../public/app-icon.ico');
 
   tray = new Tray(trayIconPath);
   
@@ -237,8 +238,22 @@ app.on('ready', () => {
   createWindow();
   createTray();
   
-  // 根据偏好选择是否自动检查更新（渲染进程会发起手动或状态检查）
-  // 为保持简单，这里仍保留一次状态查询入口，由渲染进程触发手动检查
+  // 配置自动更新
+  if (!app.isPackaged) {
+    console.log('开发环境，跳过自动更新配置');
+  } else {
+    try {
+      updateElectronApp({
+        repo: 'enshulv/momentum_desktop',
+        updateInterval: '1 hour'
+      });
+      console.log('自动更新已配置');
+    } catch (error) {
+      console.error('自动更新配置失败:', error);
+      // 降级到手动更新检查
+      setTimeout(checkForUpdates, 5000);
+    }
+  }
 });
 
 // 所有窗口关闭时的处理（因为有系统托盘，所以不自动退出）

@@ -35,9 +35,41 @@ dist-ssr
 *.p12
 *.pfx
 
-# 构建输出
+# Electron 构建输出
 dist_electron
+out/
+release/
+
+# electron-builder 输出
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.zip
+*.tar.gz
+*.blockmap
+latest*.yml
 
 # 临时文件
 .tmp
 .cache
+*.temp
+
+# 开发工具
+.vscode/settings.json
+.vscode/launch.json
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+
+# 测试文件
+*.test.sql
+*debug*.sql
+*test*.sql
+*quick*.sql
+*verify*.sql
+
+# 构建缓存
+.electron-builder-cache/

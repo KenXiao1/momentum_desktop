@@ -1,0 +1,125 @@
+appId: com.momentum.desktop
+productName: Momentum Desktop
+copyright: "MIT License"
+asar: true
+
+# 构建目录配置
+directories:
+  output: dist
+  buildResources: public
+
+# 文件包含配置
+files:
+  - "dist/**/*"
+  - "electron/**/*"
+  - "public/app-icon.ico"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!**/node_modules/*.d.ts"
+  - "!**/node_modules/.bin"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!.editorconfig"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+  - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+
+# Windows 配置
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32  # 添加32位支持
+    - target: portable
+      arch:
+        - x64
+        - ia32
+    - target: zip  # 添加压缩包格式
+      arch:
+        - x64
+  icon: public/app-icon.ico
+  requestedExecutionLevel: asInvoker
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # 添加文件版本信息
+  fileVersion: ${version}
+  productVersion: ${version}
+  legalCopyright: "MIT License © Momentum Team"
+  publisherName: "Momentum Team"
+
+# NSIS 安装包配置
+nsis:
+  oneClick: false                                # 创建辅助安装程序，而不是一键安装
+  allowElevation: true                          # 允许请求提升权限
+  allowToChangeInstallationDirectory: true     # 允许修改安装目录
+  createStartMenuShortcut: true               # 创建开始菜单快捷方式
+  createDesktopShortcut: always               # 总是创建桌面快捷方式
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  installerIcon: public/app-icon.ico
+  uninstallerIcon: public/app-icon.ico
+  installerHeaderIcon: public/app-icon.ico
+  deleteAppDataOnUninstall: false             # 卸载时不删除用户数据
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # 添加更多 NSIS 特定配置
+  language: "2052"                            # 简体中文语言包
+  displayLanguageSelector: true               # 显示语言选择器
+  multiLanguageInstaller: true                # 多语言安装包
+  packElevateHelper: true                     # 打包提升权限助手
+  differentialPackage: true                   # 差分更新包
+
+# 便携版配置  
+portable:
+  artifactName: ${productName}-Portable-${version}.${ext}
+
+# 暂时只考虑 Windows 平台
+# macOS 和 Linux 支持已注释，未来可根据需要启用
+
+# macOS 配置 (暂时禁用)
+# mac:
+#   target:
+#     - target: dmg
+#       arch: [x64, arm64]
+#   icon: public/app-icon.png
+#   category: public.app-category.productivity
+
+# Linux 配置 (暂时禁用)  
+# linux:
+#   target:
+#     - target: AppImage
+#       arch: [x64]
+#     - target: deb
+#       arch: [x64]
+#   icon: public/app-icon.png
+
+# GitHub Release 发布配置
+publish:
+  provider: github
+  owner: enshulv
+  repo: momentum_desktop
+  releaseType: release
+
+# 更新配置
+updater:
+  enabled: true
+  
+# 更新日志
+releaseInfo:
+  releaseNotes: |
+    🚀 Momentum Desktop 新版本发布
+    
+    ✨ 主要特性：
+    - 基于链式时延协议的自控力提升
+    - 现代化的用户界面
+    - 系统托盘支持
+    - 本地数据存储
+    
+    📦 安装说明：
+    1. 下载安装包
+    2. 运行安装程序
+    3. 按照向导完成安装
+    
+    🔧 系统要求：
+    - Windows 10 或更高版本
+    - 64位系统
