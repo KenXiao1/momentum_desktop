@@ -73,7 +73,6 @@ win:
     - target: portable
       arch:
         - x64
-        - ia32
   icon: public/app-icon.ico
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}
@@ -93,24 +92,12 @@ nsis:
   installerHeaderIcon: public/app-icon.ico
   deleteAppDataOnUninstall: false             # 卸载时不删除用户数据
   artifactName: ${productName}-Setup-${version}.${ext}
-  # 启用更强的压缩选项
-  useZip: false                               # 不使用zip，使用默认的lzma压缩算法（更高效）
-  # 额外的NSIS压缩优化
   warningsAsErrors: false
   unicode: true
-  # 使用最高压缩级别
-  compression: maximum
 
 # 便携版配置  
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
-  # 便携版压缩优化
-  compression: maximum
-
-# ZIP 压缩包配置
-zip:
-  compression: maximum
-  artifactName: ${productName}-${version}.${ext}
 
 # 暂时只考虑 Windows 平台
 # macOS 和 Linux 支持已注释，未来可根据需要启用
