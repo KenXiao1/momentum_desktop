@@ -15,43 +15,30 @@ export interface BackupMetadata {
   description?: string;
 }
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      storage: {
-        getDefaultDataPath: () => Promise<string>;
-        selectDataDirectory: () => Promise<string | null>;
-        directoryExists: (path: string) => Promise<boolean>;
-        createDirectory: (path: string) => Promise<boolean>;
-        readFile: (path: string) => Promise<any>;
-        writeFile: (path: string, data: any) => Promise<boolean>;
-        deleteFile: (path: string) => Promise<boolean>;
-        listDirectory: (path: string) => Promise<Array<{
-          name: string;
-          path: string;
-          isDirectory: boolean;
-          size: number;
-          modifiedAt: Date;
-        }>>;
-        copyFile: (sourcePath: string, destPath: string) => Promise<boolean>;
-        getFileStats: (path: string) => Promise<{
-          size: number;
-          createdAt: Date;
-          modifiedAt: Date;
-          isDirectory: boolean;
-          isFile: boolean;
-        } | null>;
-      };
-      backup?: {
-        createZip: (sourceDir: string, outputPath: string, exclude?: string[]) => Promise<boolean>;
-        extractZip: (zipPath: string, outputDir: string) => Promise<boolean>;
-      };
-    };
-  }
-}
+
 
 export class DataBackupService {
   private backupInterval: NodeJS.Timeout | null = null;
+
+  /**
+   * 安全地将可能是字符串的日期转换为Date对象
+   */
+  private safeToDate(dateValue: Date | string | undefined | null): Date | null {
+    if (!dateValue) {
+      return null;
+    }
+    
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+    
+    try {
+      return new Date(dateValue);
+    } catch {
+      console.warn('无效的日期值:', dateValue);
+      return null;
+    }
+  }
 
   async createBackup(description?: string): Promise<string | null> {
     try {
@@ -226,7 +213,7 @@ export class DataBackupService {
               : `${file.path}/backup_metadata.json`; // ZIP中的元数据需要解压后读取
               
             if (file.isDirectory) {
-              const metadata = await window.electronAPI!.storage.readFile(metadataPath);
+              const metadata = await window.electronAPI!.storage.readFile(metadataPath) as { version?: string } | null;
               version = metadata?.version || '1.0.0';
             }
           } catch {
@@ -319,8 +306,9 @@ export class DataBackupService {
     }, intervalMs);
 
     // 检查是否需要立即执行一次备份
-    if (settings.lastBackupTime) {
-      const timeSinceLastBackup = Date.now() - settings.lastBackupTime.getTime();
+    const lastBackupTime = this.safeToDate(settings.lastBackupTime);
+    if (lastBackupTime) {
+      const timeSinceLastBackup = Date.now() - lastBackupTime.getTime();
       if (timeSinceLastBackup >= intervalMs) {
         console.log('距离上次备份时间较长，立即执行一次备份');
         setTimeout(() => this.createBackup('启动时自动备份'), 5000);
@@ -348,11 +336,12 @@ export class DataBackupService {
         return false;
       }
 
-      if (!settings.lastBackupTime) {
+      const lastBackupTime = this.safeToDate(settings.lastBackupTime);
+      if (!lastBackupTime) {
         return true; // 从未备份过
       }
 
-      const timeSinceLastBackup = Date.now() - settings.lastBackupTime.getTime();
+      const timeSinceLastBackup = Date.now() - lastBackupTime.getTime();
       const intervalMs = settings.backupInterval * 60 * 60 * 1000;
       
       return timeSinceLastBackup >= intervalMs;
@@ -375,14 +364,17 @@ export class DataBackupService {
       
       const totalBackupSize = backupFiles.reduce((sum, file) => sum + file.size, 0);
       
+      // 确保 lastBackupTime 是 Date 对象
+      const lastBackupTime = this.safeToDate(settings.lastBackupTime);
+      
       let nextBackupTime: Date | null = null;
-      if (settings.autoBackup && settings.lastBackupTime) {
+      if (settings.autoBackup && lastBackupTime) {
         const intervalMs = settings.backupInterval * 60 * 60 * 1000;
-        nextBackupTime = new Date(settings.lastBackupTime.getTime() + intervalMs);
+        nextBackupTime = new Date(lastBackupTime.getTime() + intervalMs);
       }
       
       return {
-        lastBackupTime: settings.lastBackupTime || null,
+        lastBackupTime,
         nextBackupTime,
         backupCount: backupFiles.length,
         totalBackupSize,
