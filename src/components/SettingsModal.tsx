@@ -53,6 +53,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const hasStorageChanges = originalStorageSettings && JSON.stringify(storageSettings) !== JSON.stringify(originalStorageSettings);
   const hasChanges = hasWindowChanges || hasStorageChanges;
 
+  // 定义 handleClose 函数（必须在使用它的 useEffect 之前）
+  const handleClose = useCallback(() => {
+    if (hasChanges) {
+      if (confirm('您有未保存的更改，确定要关闭吗？')) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  }, [hasChanges, onClose]);
+
   // 加载设置
   useEffect(() => {
     if (isOpen) {
@@ -100,16 +111,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleClose]);
-
-  const handleClose = useCallback(() => {
-    if (hasChanges) {
-      if (confirm('您有未保存的更改，确定要关闭吗？')) {
-        onClose();
-      }
-    } else {
-      onClose();
-    }
-  }, [hasChanges, onClose]);
 
   const handleSave = async () => {
     setSaving(true);
