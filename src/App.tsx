@@ -104,16 +104,34 @@ function App() {
     // 如果还没有初始化完成，显示加载状态
     if (!isInitialized) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-3xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-xl">
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-[#161615] dark:via-black dark:to-[#161615] flex items-center justify-center relative overflow-hidden">
+          {/* Background Effects */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-primary-500/5 dark:from-primary-500/5 dark:via-transparent dark:to-primary-500/5"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 dark:bg-primary-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-500/5 dark:bg-primary-500/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+          
+          <div className="relative z-10 text-center animate-fade-in">
+            <div className="mb-12">
+              <div className="w-20 h-20 rounded-3xl bg-primary-500/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8 border border-primary-500/30 dark:bg-primary-500/20 dark:border-primary-500/30 shadow-2xl">
+                <i className="fas fa-fire text-primary-500 text-3xl"></i>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-light font-chinese text-gray-900 dark:text-white mb-4">
+                Momentum
+              </h1>
+              <h2 className="text-xl font-chinese text-gray-600 dark:text-gray-300 mb-8">
+                正在初始化应用...
+              </h2>
             </div>
-            <h2 className="text-2xl font-bold font-chinese text-gray-900 dark:text-slate-100 mb-2">
-              正在初始化...
-            </h2>
-            <p className="text-gray-600 dark:text-slate-400 font-mono text-sm">
-              INITIALIZING APPLICATION
+            
+            {/* Loading Animation */}
+            <div className="flex items-center justify-center space-x-2 mb-8">
+              <div className="w-3 h-3 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+            
+            <p className="text-gray-500 dark:text-gray-400 font-mono text-sm tracking-wider">
+              INITIALIZING SYSTEM COMPONENTS
             </p>
           </div>
         </div>

@@ -1,0 +1,22 @@
+[33mcommit a9fb971d127df3d6cf6f199b7162f9424c350895[m[33m ([m[1;36mHEAD -> [m[1;32mnew-feature-branch[m[33m)[m
+Author: enshulv <2543028323@qq.com>
+Date:   Mon Aug 18 23:51:23 2025 +0800
+
+    fix(SettingsModal): 修复handleClose函数初始化顺序错误导致的白屏问题
+    
+    - 将handleClose的useCallback定义移动到useEffect之前
+    - 解决'Cannot access handleClose before initialization'错误
+    - 修复应用启动时的白屏问题
+    - 确保函数在被引用前已正确初始化
+    
+    问题描述:
+    - SettingsModal组件中handleClose函数在useEffect的依赖数组中被引用
+    - 但handleClose的定义在useEffect之后，导致引用错误
+    - 这个错误阻止了整个应用的正常渲染，造成白屏
+    
+    解决方案:
+    - 重新排列代码顺序，确保handleClose在使用前定义
+    - 保持useCallback的依赖项不变，确保功能正常
+
+ src/components/SettingsModal.tsx | 21 [32m+++++++++++[m[31m----------[m
+ 1 file changed, 11 insertions(+), 10 deletions(-)

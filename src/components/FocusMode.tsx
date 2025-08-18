@@ -568,30 +568,6 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     }
   }, [session.isPaused, clearAutoResumeSchedule]);
 
-  // 全屏模式处理
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        exitFullscreen();
-      } else if (e.key === 'F11') {
-        e.preventDefault();
-        toggleFullscreen();
-      }
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      document.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [isFullscreen, toggleFullscreen]);
-
   // 全屏模式函数
   const enterFullscreen = async () => {
     try {
@@ -618,6 +594,30 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       enterFullscreen();
     }
   }, [isFullscreen]);
+
+  // 全屏模式处理
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        exitFullscreen();
+      } else if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isFullscreen, toggleFullscreen]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-[#161615] dark:via-black dark:to-[#161615] flex items-center justify-center relative overflow-hidden">
