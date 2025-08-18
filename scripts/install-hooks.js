@@ -20,7 +20,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # 运行代码检查（宽松模式）
-npm run lint:relaxed
+npm run lint
 if [ $? -ne 0 ]; then
   echo "❌ 代码检查失败，请修复问题后重新提交"
   exit 1
