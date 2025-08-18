@@ -74,12 +74,10 @@
       {
         "assets": [
           {
-            "path": "dist/*.exe",
-            "label": "Windows Installer"
+            "path": "dist/*.exe"
           },
           {
-            "path": "dist/*.zip",
-            "label": "Windows Portable"
+            "path": "dist/*.zip"
           }
         ]
       }
