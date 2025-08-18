@@ -8,6 +8,7 @@ import { buildChainTree, getTopLevelChains } from '../utils/chainTree';
 import { getNextUnitInGroup } from '../utils/chainTree';
 import { Download, TreePine, Trash2 } from 'lucide-react';
 import { NotificationToggle } from './NotificationToggle';
+import { UpdateNotification } from './UpdateNotification';
 import { RecycleBinModal } from './RecycleBinModal';
 import { RecycleBinService } from '../services/RecycleBinService';
 import { AccountModal } from './AccountModal';
@@ -82,7 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Theme toggle in header */}
+        {/* Header: notification + theme + update banner */}
         <div className="flex justify-end items-center space-x-4 mb-6">
           {isSupabaseConfigured && (
             <button
@@ -96,6 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
           <NotificationToggle />
           <ThemeToggle variant="dropdown" showLabel />
+          <UpdateNotification />
         </div>
         
         <header className="text-center mb-16 animate-fade-in">

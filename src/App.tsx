@@ -1212,7 +1212,6 @@ function App() {
   return (
     <div className="min-h-screen pt-10">
       <WindowControls />
-      <UpdateNotification />
       {renderContent()}
     </div>
   );

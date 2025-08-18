@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings, Minimize2, Power, RotateCcw, Database, Folder, FolderOpen, HardDrive, Archive, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Settings, Minimize2, Power, RotateCcw, Database, Folder, FolderOpen, HardDrive, Archive, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { userPreferences } from '../utils/userPreferences';
 import { localFileStorage, LocalStorageSettings } from '../services/LocalFileStorage';
 import { dataBackupService, BackupFile } from '../services/DataBackupService';
+import { AboutSection } from './AboutSection';
 
 export interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'window' | 'storage';
+  initialTab?: 'window' | 'storage' | 'about';
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -15,7 +16,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   initialTab = 'window'
 }) => {
-  const [activeTab, setActiveTab] = useState<'window' | 'storage'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'window' | 'storage' | 'about'>(initialTab);
   
   // 窗口设置状态
   const [exitBehavior, setExitBehavior] = useState<'ask' | 'hide' | 'exit'>('ask');
@@ -324,6 +325,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <span>数据存储</span>
             </button>
           )}
+          <button
+            onClick={() => setActiveTab('about')}
+            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+              activeTab === 'about'
+                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            }`}
+          >
+            <Info size={16} />
+            <span>关于</span>
+          </button>
         </div>
 
         {isLoading ? (
@@ -628,6 +640,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* 关于标签页 */}
+            {activeTab === 'about' && (
+              <AboutSection />
             )}
 
             {/* 如果不在Electron环境中显示存储设置不可用 */}

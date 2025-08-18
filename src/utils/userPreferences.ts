@@ -11,6 +11,8 @@ export interface UserPreferences {
   notifications?: boolean;
   minimizeToTray?: boolean;
   startWithSystem?: boolean;
+  // 更新偏好
+  autoCheckUpdates?: boolean;
 }
 
 const STORAGE_KEY = 'momentum_user_preferences';
@@ -21,6 +23,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   notifications: true,
   minimizeToTray: true,
   startWithSystem: false,
+  autoCheckUpdates: true,
 };
 
 export class UserPreferencesManager {
@@ -136,6 +139,21 @@ export class UserPreferencesManager {
    */
   setStartWithSystem(enabled: boolean): void {
     this.preferences.startWithSystem = enabled;
+    this.savePreferences();
+  }
+
+  /**
+   * 获取是否自动检查更新
+   */
+  getAutoCheckUpdates(): boolean {
+    return this.preferences.autoCheckUpdates !== false;
+  }
+
+  /**
+   * 设置是否自动检查更新
+   */
+  setAutoCheckUpdates(enabled: boolean): void {
+    this.preferences.autoCheckUpdates = enabled;
     this.savePreferences();
   }
 

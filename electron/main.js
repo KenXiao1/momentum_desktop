@@ -237,10 +237,8 @@ app.on('ready', () => {
   createWindow();
   createTray();
   
-  // 延迟3秒后检查更新（等待应用完全加载）
-  setTimeout(() => {
-    checkForUpdates();
-  }, 3000);
+  // 根据偏好选择是否自动检查更新（渲染进程会发起手动或状态检查）
+  // 为保持简单，这里仍保留一次状态查询入口，由渲染进程触发手动检查
 });
 
 // 所有窗口关闭时的处理（因为有系统托盘，所以不自动退出）
@@ -575,4 +573,16 @@ ipcMain.handle('update:download', async () => {
 // 获取应用版本
 ipcMain.handle('app:get-version', () => {
   return app.getVersion();
+});
+
+// shell 外部链接打开
+ipcMain.handle('shell:open-external', async (_event, targetUrl) => {
+  try {
+    const { shell } = await import('electron');
+    await shell.openExternal(targetUrl);
+    return true;
+  } catch (error) {
+    console.error('打开外部链接失败:', error);
+    return false;
+  }
 });

@@ -136,5 +136,5 @@ jobs:
     steps:
       - name: 发送构建通知
         run: |
-                      echo "✅ Momentum Desktop ${{ github.ref_name }} 构建完成！"
-            echo "📦 发布地址: https://github.com/enshulv/momentum_desktop/releases/tag/${{ github.ref_name }}"
+          echo "✅ Momentum Desktop ${{ github.ref_name }} 构建完成！"
+          echo "📦 发布地址: https://github.com/enshulv/momentum_desktop/releases/tag/${{ github.ref_name }}"

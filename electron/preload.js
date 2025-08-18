@@ -51,6 +51,9 @@ try {
     },
     app: {
       getVersion: () => ipcRenderer.invoke('app:get-version'),
+    },
+    shell: {
+      openExternal: (url) => ipcRenderer.invoke('shell:open-external', url)
     }
   });
   
