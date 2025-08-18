@@ -6,8 +6,6 @@ compression: maximum  # 启用最大压缩
 # 启用更强的压缩选项
 asarUnpack: 
   - "**/*.{node,dll}"  # 仅解包必要的原生模块
-# 启用更激进的压缩
-compression: store  # 使用最高压缩级别
 nodeGypRebuild: false  # 禁用原生模块重建
 removePackageScripts: true  # 移除 package.json 中的脚本
 
