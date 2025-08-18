@@ -56,11 +56,9 @@
 ## 📦 下载安装
 
 ### 📥 预编译版本
-从 [Releases页面](https://github.com/enshulv/momentum_desktop/releases) 下载适合你系统的版本：
+从 [Releases页面](https://github.com/enshulv/momentum_desktop/releases) 下载Windows版本：
 
 - **Windows x64**: `.exe` 安装包 (NSIS) / 便携版
-- **macOS x64/ARM64**: `.dmg` 镜像文件 / `.zip` 压缩包 (支持Intel和Apple Silicon)
-- **Linux x64**: `.AppImage` 可执行文件 / `.deb` / `.rpm` 安装包
 
 ### 🛠️ 从源码构建
 

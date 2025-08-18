@@ -53,48 +53,8 @@
       ],
       "icon": "public/app-icon.ico",
       "requestedExecutionLevel": "asInvoker"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        },
-        {
-          "target": "zip",
-          "arch": ["x64", "arm64"]
-        }
-      ],
-      "icon": "public/app-icon.png",
-      "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": ["x64"]
-        },
-        {
-          "target": "deb",
-          "arch": ["x64"]
-        },
-        {
-          "target": "rpm",
-          "arch": ["x64"]
-        }
-      ],
-      "icon": "public/app-icon.png",
-      "category": "Office",
-      "desktop": {
-        "entry": {
-          "Name": "Momentum Desktop",
-          "Comment": "基于链式时延协议的自控力提升工具",
-          "Keywords": "productivity;focus;habit;timer;"
-        }
-      }
     }
+
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
