@@ -1,89 +1,69 @@
-name: Build and Release
+name: 🚀 Auto Release
 
-# 当推送 tag 时触发
 on:
   push:
-    tags:
-      - "v*.*.*"
-  # 允许手动触发
+    branches:
+      - main
+      - new-feature-branch
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v1.0.0)'
-        required: true
-        type: string
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     
     steps:
-      # 步骤1：检出仓库代码
-      - name: Check out Git repository
+      - name: 📥 Checkout
         uses: actions/checkout@v4
-        
-      # 步骤2：使用 Node.js 环境
-      - name: Use Node.js
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x  # 升级到更新的 Node.js 版本
+          node-version: '18'
           cache: 'npm'
-          
-      # 步骤3：安装依赖
-      - name: Install dependencies
+
+      - name: 📦 Install dependencies
         run: npm ci
-        
-      # 步骤4：构建 React 应用
-      - name: Build React app
+
+      - name: 🔍 Lint code
+        run: npm run lint
+
+      - name: 🏗️ Build app
         run: npm run build
-        
-      # 步骤5：构建 Windows 应用
-      - name: Build Windows app
-        run: npm run build:win
+
+      - name: 📋 Analyze commits
+        id: semantic
+        run: |
+          npx semantic-release --dry-run --no-ci > semantic-output.txt 2>&1
+          $needsRelease = Select-String -Path semantic-output.txt -Pattern "The next release version is"
+          if ($needsRelease) {
+            echo "needs-release=true" >> $env:GITHUB_OUTPUT
+            $version = ($needsRelease -split "The next release version is ")[1].Trim()
+            echo "version=$version" >> $env:GITHUB_OUTPUT
+            echo "🎯 检测到需要发布新版本: $version"
+          } else {
+            echo "needs-release=false" >> $env:GITHUB_OUTPUT
+            echo "ℹ️ 当前提交不需要发布新版本"
+          }
+
+      - name: 🔧 Build Electron App
+        if: steps.semantic.outputs.needs-release == 'true'
+        run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      # 步骤6：创建 Release
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            dist/*.exe
-            dist/*.exe.blockmap
-            dist/latest.yml
-            dist/*.zip
-          draft: false
-          generate_release_notes: true
-          name: Release ${{ github.ref_name }}
-          body: |
-            🚀 **Momentum Desktop ${{ github.ref_name }}**
-            
-            ## 📦 Windows 下载
-            
-            - **📦 安装包**: `Momentum-Desktop-Setup-*.exe` - 推荐大多数用户使用
-            - **💼 便携版**: `Momentum-Desktop-Portable-*.exe` - 无需安装，直接运行
-            - **📄 压缩包**: `Momentum-Desktop-*.zip` - 解压即用
-            
-            ## ✨ 主要特性
-            - 🎯 基于链式时延协议的自控力提升
-            - 🎨 现代化的用户界面
-            - 📱 系统托盘支持
-            - 💾 本地数据存储
-            - 🔄 自动更新功能
-            
-            ## 🔧 系统要求
-            - **Windows 10** 或更高版本
-            - **64位** 系统架构
-            - **50MB** 可用磁盘空间
-            
-            ## 📥 安装说明
-            1. 下载 `Momentum-Desktop-Setup-*.exe`
-            2. 右键选择"以管理员身份运行"
-            3. 按照安装向导完成安装
-            4. 首次运行时会自动检查更新
-            
-            ## 🆕 更新内容
-            详见自动生成的更新日志
+
+      - name: 🚀 Semantic Release
+        if: steps.semantic.outputs.needs-release == 'true'
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📢 Notification
+        if: steps.semantic.outputs.needs-release == 'true'
+        run: |
+          echo "🎉 新版本 ${{ steps.semantic.outputs.version }} 已成功发布！"
+          echo "📦 下载地址: https://github.com/${{ github.repository }}/releases/latest"
