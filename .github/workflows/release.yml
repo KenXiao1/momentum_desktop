@@ -31,39 +31,13 @@ jobs:
       - name: 🔍 Lint code
         run: npm run lint
 
-      - name: 🏗️ Build app
-        run: npm run build
-
-      - name: 📋 Analyze commits
-        id: semantic
-        run: |
-          npx semantic-release --dry-run --no-ci > semantic-output.txt 2>&1
-          $needsRelease = Select-String -Path semantic-output.txt -Pattern "The next release version is"
-          if ($needsRelease) {
-            echo "needs-release=true" >> $env:GITHUB_OUTPUT
-            $version = ($needsRelease -split "The next release version is ")[1].Trim()
-            echo "version=$version" >> $env:GITHUB_OUTPUT
-            echo "🎯 检测到需要发布新版本: $version"
-          } else {
-            echo "needs-release=false" >> $env:GITHUB_OUTPUT
-            echo "ℹ️ 当前提交不需要发布新版本"
-          }
-
-      - name: 🔧 Build Electron App
-        if: steps.semantic.outputs.needs-release == 'true'
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🚀 Semantic Release
-        if: steps.semantic.outputs.needs-release == 'true'
+      - name: 🚀 Semantic Release (自动检测、构建和发布)
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📢 Notification
-        if: steps.semantic.outputs.needs-release == 'true'
         run: |
-          echo "🎉 新版本 ${{ steps.semantic.outputs.version }} 已成功发布！"
+          echo "✅ Semantic Release 执行完成！如有新版本将自动发布到 GitHub Releases"
           echo "📦 下载地址: https://github.com/${{ github.repository }}/releases/latest"
