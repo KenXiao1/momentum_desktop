@@ -2,21 +2,27 @@ appId: com.momentum.desktop
 productName: Momentum Desktop
 copyright: "MIT License"
 asar: true
+compression: maximum  # 启用最大压缩
+# 启用更强的压缩选项
+asarUnpack: 
+  - "**/*.{node,dll}"  # 仅解包必要的原生模块
 
 # 构建目录配置
 directories:
   output: dist
   buildResources: public
 
-# 文件包含配置
+# 文件包含配置 - 优化后大幅减少包大小
 files:
   - "dist/**/*"
   - "electron/**/*"
   - "public/app-icon.ico"
-  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
-  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
-  - "!**/node_modules/*.d.ts"
+  # 排除所有开发文件和文档
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,HISTORY.md,CONTRIBUTORS.md,AUTHORS.md}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples,docs,doc}"
+  - "!**/node_modules/*/{*.d.ts,*.flow,*.map,*.ts}"
   - "!**/node_modules/.bin"
+  - "!**/node_modules/**/*.{md,txt,yml,yaml,json,lock}"
   - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
   - "!.editorconfig"
   - "!**/._*"
@@ -24,6 +30,16 @@ files:
   - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
   - "!**/{appveyor.yml,.travis.yml,circle.yml}"
   - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+  # 排除大型开发工具和不必要的文件
+  - "!**/node_modules/**/{benchmark,coverage,demo,demos,samples,sample}"
+  - "!**/node_modules/**/*.{spec.js,test.js,test.ts,spec.ts}"
+  - "!**/node_modules/**/Makefile*"
+  - "!**/node_modules/**/{.eslintrc*,.prettierrc*,.babelrc*,jest.config*,webpack.config*}"
+  - "!**/node_modules/**/src/**/*"
+  # 排除语言文件和多语言包
+  - "!**/node_modules/**/locale/**/*"
+  - "!**/node_modules/**/locales/**/*"
+  - "!**/node_modules/**/lang/**/*"
 
 # Windows 配置
 win:
@@ -43,6 +59,7 @@ win:
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}
 
+
 # NSIS 安装包配置
 nsis:
   oneClick: false                                # 创建辅助安装程序，而不是一键安装
@@ -57,6 +74,8 @@ nsis:
   installerHeaderIcon: public/app-icon.ico
   deleteAppDataOnUninstall: false             # 卸载时不删除用户数据
   artifactName: ${productName}-Setup-${version}.${ext}
+  # 启用更强的压缩选项
+  useZip: false                               # 不使用zip，使用默认的lzma压缩算法（更高效）
 
 # 便携版配置  
 portable:
