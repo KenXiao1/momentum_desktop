@@ -10,7 +10,7 @@ import { GroupView } from './components/GroupView';
 import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
 import WindowControls from './components/WindowControls'; // 添加这一行导入
 import { storage as localStorageUtils } from './utils/storage';
-import './utils/testUpdater'; // 加载测试工具
+
 
 import { isSupabaseConfigured } from './lib/supabase';
 import { isSessionExpired } from './utils/time';
@@ -25,11 +25,11 @@ import { dataStorageManager } from './services/DataStorageManager';
 import './utils/quickFix'; // 自动运行快速修复
 import './utils/debugRuleCreation'; // 调试工具
 import './utils/emergencyFix'; // 紧急修复
-import './utils/simpleTest'; // 简单测试
+
 import './utils/fixRuleIds'; // 修复规则ID
 import './utils/directFix'; // 直接修复
 import './utils/ultimateFix'; // 终极修复
-import './utils/testScheduleReminder'; // 预约提醒测试工具（仅开发环境）
+
 
 function App() {
   const [state, setState] = useState<AppState>({
