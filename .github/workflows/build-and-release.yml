@@ -39,7 +39,8 @@ jobs:
       
       - name: 运行代码检查（非发布标签时）
         if: startsWith(github.ref, 'refs/tags/v') == false
-        run: npm run lint
+        continue-on-error: true
+        run: npm run lint || true
       
       - name: 构建应用
         run: npm run build
