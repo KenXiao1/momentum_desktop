@@ -49,7 +49,6 @@
         }
       ],
       "icon": "public/app-icon.ico",
-      "publisherName": "Momentum Team",
       "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
@@ -86,9 +85,11 @@
       "icon": "public/app-icon.png",
       "category": "Office",
       "desktop": {
-        "Name": "Momentum Desktop",
-        "Comment": "基于链式时延协议的自控力提升工具",
-        "Keywords": "productivity;focus;habit;timer;"
+        "entry": {
+          "Name": "Momentum Desktop",
+          "Comment": "基于链式时延协议的自控力提升工具",
+          "Keywords": "productivity;focus;habit;timer;"
+        }
       }
     }
   },

@@ -146,7 +146,7 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
       setRules(prev => [...prev, tempRule]);
       
       // 异步执行实际保存操作
-      const result = await asyncOperationManager.executeOperation({
+      await asyncOperationManager.executeOperation({
         id: operationId,
         operation: () => exceptionRuleManager.createRule(
           formData.name,
@@ -198,8 +198,9 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
         }
       });
       
-    } catch (err) {
+    } catch (error) {
       // 处理同步错误
+      console.error('创建规则失败:', error);
       setRules(prev => prev.filter(rule => rule.id !== operationId));
       setOptimisticUpdates(prev => {
         const newMap = new Map(prev);
@@ -272,8 +273,9 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
         }
       });
       
-    } catch (err) {
+    } catch (error) {
       // 回滚乐观更新
+      console.error('更新规则失败:', error);
       setRules(prev => prev.map(rule => 
         rule.id === originalRule.id ? originalRule : rule
       ));
@@ -293,8 +295,8 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
     try {
       await exceptionRuleManager.deleteRule(rule.id);
       await loadRules();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '删除规则失败');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '删除规则失败');
     }
   }, []);
 
@@ -335,34 +337,13 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch (error) {
+      console.error('导出规则失败:', error);
       setError('导出规则失败');
     }
   };
 
-  const getRuleTypeDisplayName = (type: ExceptionRuleType): string => {
-    return type === ExceptionRuleType.PAUSE_ONLY ? '仅暂停' : '仅提前完成';
-  };
-
-  const getRuleTypeColor = (type: ExceptionRuleType): string => {
-    return type === ExceptionRuleType.PAUSE_ONLY 
-      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300'
-      : 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-300';
-  };
-
-  const formatLastUsed = (date?: Date): string => {
-    if (!date) return '从未使用';
-    
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return '今天';
-    if (diffDays === 1) return '昨天';
-    if (diffDays < 7) return `${diffDays}天前`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}周前`;
-    return `${Math.floor(diffDays / 30)}个月前`;
-  };
+  // Helper functions removed as they are not used in the component
 
   if (loading) {
     return (

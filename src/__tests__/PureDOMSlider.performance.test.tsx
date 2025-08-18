@@ -181,7 +181,7 @@ describe('PureDOMSlider性能测试', () => {
       unmount();
       
       // 检查是否有残留的事件监听器
-      const eventListeners = (document as unknown as { _events?: any })._events;
+      const eventListeners = (document as unknown as { _events?: Record<string, unknown> })._events;
       if (eventListeners) {
         expect(eventListeners.mousemove).toBeUndefined();
         expect(eventListeners.mouseup).toBeUndefined();

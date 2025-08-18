@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ActiveSession, Chain, ExceptionRule, ExceptionRuleType, SessionContext, PauseOptions } from '../types';
 import { CheckCircle, Settings, Maximize, X, AlertTriangle } from 'lucide-react';
 import { formatDuration, formatElapsedTime, formatTimeDescription, formatLastCompletionReference } from '../utils/time';
@@ -310,7 +310,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       if (!name || !name.trim()) {
         userFeedbackHandler.showErrorMessage(
           new EnhancedExceptionRuleException(
-            'VALIDATION_ERROR' as any,
+            'VALIDATION_ERROR' as keyof typeof EnhancedExceptionRuleException,
             '规则名称不能为空',
             { name, type }
           )
@@ -319,7 +319,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       }
       
       // 确保类型有效
-      let validType = type;
+      let validType: ExceptionRuleType = type;
       if (!validType || !Object.values(ExceptionRuleType).includes(validType)) {
         console.warn('⚠️ 规则类型无效，使用默认类型');
         validType = pendingActionType === 'pause' 
@@ -345,7 +345,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
         userFeedbackHandler.hideProgress();
         
         if (duplicateCheck.suggestions && duplicateCheck.suggestions.length > 0) {
-            userChoice = duplicateCheck.suggestions[0].type as any;
+            userChoice = duplicateCheck.suggestions[0].type as 'use_existing' | 'modify_name' | 'create_anyway';
         }
         
         // 重新显示进度
@@ -386,7 +386,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   };
 
   // 增强的错误处理函数
-  const handleRuleError = async (error: any, operation: string, context: any) => {
+  const handleRuleError = async (error: unknown, operation: string, context: Record<string, unknown>) => {
     try {
       if (error instanceof EnhancedExceptionRuleException) {
         // 显示用户友好的错误信息
@@ -414,7 +414,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       } else {
         // 处理普通错误
         const enhancedError = new EnhancedExceptionRuleException(
-          'STORAGE_ERROR' as any,
+          'STORAGE_ERROR' as keyof typeof EnhancedExceptionRuleException,
           error instanceof Error ? error.message : '未知错误',
           context,
           true,
@@ -456,7 +456,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
   };
 
   // 自动恢复相关
-  const clearAutoResumeSchedule = () => {
+  const clearAutoResumeSchedule = useCallback(() => {
     try {
       const dataStr = localStorage.getItem(AUTO_RESUME_STORAGE_KEY);
       if (dataStr) {
@@ -474,9 +474,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     }
     setAutoResumeAt(null);
     setResumeCountdown(0);
-  };
+  }, [session.chainId]);
 
-  const setupAutoResumeTimer = (resumeTime: number) => {
+  const setupAutoResumeTimer = useCallback((resumeTime: number) => {
     if (resumeTimeoutRef.current) {
       window.clearTimeout(resumeTimeoutRef.current);
     }
@@ -490,7 +490,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       onResume();
       clearAutoResumeSchedule();
     }, delay);
-  };
+  }, [clearAutoResumeSchedule, onResume]);
 
   const scheduleAutoResume = (minutes: number) => {
     const resumeTime = Date.now() + minutes * 60 * 1000;
@@ -530,7 +530,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     } catch (error) {
       console.warn('Failed to clear auto resume data:', error);
     }
-  }, [session.isPaused, session.chainId, session.startedAt, onResume]);
+  }, [session.isPaused, session.chainId, session.startedAt, onResume, setupAutoResumeTimer, clearAutoResumeSchedule]);
 
   // 倒计时显示
   useEffect(() => {
@@ -559,14 +559,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({
         }, 1000);
         return () => window.clearInterval(interval);
     }
-  }, [session.isPaused, session.pausedAt, autoResumeAt]);
+  }, [session.isPaused, session.pausedAt, autoResumeAt, setupAutoResumeTimer]);
 
   // 清理自动恢复计划
   useEffect(() => {
     if (!session.isPaused) {
       clearAutoResumeSchedule();
     }
-  }, [session.isPaused]);
+  }, [session.isPaused, clearAutoResumeSchedule]);
 
   // 全屏模式处理
   useEffect(() => {
@@ -590,7 +590,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, toggleFullscreen]);
 
   // 全屏模式函数
   const enterFullscreen = async () => {
@@ -611,13 +611,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     }
   };
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (isFullscreen) {
       exitFullscreen();
     } else {
       enterFullscreen();
     }
-  };
+  }, [isFullscreen]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-[#161615] dark:via-black dark:to-[#161615] flex items-center justify-center relative overflow-hidden">

@@ -13,7 +13,6 @@ import {
   AlertTriangle, 
   CheckCircle, 
   X,
-  Info,
   RefreshCw
 } from 'lucide-react';
 
@@ -29,15 +28,7 @@ interface ImportResult {
   errors: Array<{ name: string; error: string }>;
 }
 
-interface ExportData {
-  rules: ExceptionRule[];
-  usageRecords?: any[];
-  exportedAt: Date;
-  summary: {
-    totalRules: number;
-    totalUsageRecords: number;
-  };
-}
+// Removed unused ExportData interface
 
 export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
   isOpen,
@@ -143,14 +134,13 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
       setLoading(true);
       
       const text = await file.text();
-      let data: any;
+      let data: { rules: Array<{ name: string; type: string; description?: string }> };
       
       if (file.name.endsWith('.json')) {
         data = JSON.parse(text);
       } else if (file.name.endsWith('.csv')) {
         // 简单的CSV解析
         const lines = text.split('\n');
-        const headers = lines[0].split(',');
         const rules = lines.slice(1).filter(line => line.trim()).map(line => {
           const values = line.split(',');
           return {
@@ -173,7 +163,7 @@ export const ImportExportDialog: React.FC<ImportExportDialogProps> = ({
       let validRules = 0;
       let invalidRules = 0;
       
-      const processedRules = data.rules.map((rule: any) => {
+      const processedRules = data.rules.map((rule: { name: string; type: string; description?: string }) => {
         const isValid = rule.name && 
           rule.type && 
           (rule.type === 'pause_only' || rule.type === 'early_completion_only');
