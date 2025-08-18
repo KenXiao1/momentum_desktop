@@ -1,6 +1,5 @@
 {
   "branches": [
-    "main",
     "new-feature-branch"
   ],
   "repositoryUrl": "https://github.com/enshulv/momentum_desktop.git",
