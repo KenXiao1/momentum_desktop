@@ -64,13 +64,13 @@ files:
 # Windows 配置 - 调整构建顺序，优先构建zip
 win:
   target:
-    - target: zip  # 首先构建压缩包格式
-      arch:
-        - x64
     - target: nsis
       arch:
         - x64
     - target: portable
+      arch:
+        - x64
+    - target: zip
       arch:
         - x64
   icon: public/app-icon.ico
