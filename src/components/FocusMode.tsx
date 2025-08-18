@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActiveSession, Chain, ExceptionRule, ExceptionRuleType, SessionContext, PauseOptions } from '../types';
-import { CheckCircle, Settings, Maximize, Minimize, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Settings, Maximize, X, AlertTriangle } from 'lucide-react';
 import { formatDuration, formatElapsedTime, formatTimeDescription, formatLastCompletionReference } from '../utils/time';
 import { notificationManager } from '../utils/notifications';
 import { forwardTimerManager } from '../utils/forwardTimer';
@@ -15,7 +15,9 @@ import { EnhancedExceptionRuleException } from '../types';
 interface FocusModeProps {
   session: ActiveSession;
   chain: Chain;
-  storage: any;
+  storage: {
+    getLastCompletionTime: (chainId: string) => number | null;
+  };
   onComplete: (description?: string, notes?: string) => void;
   onInterrupt: (reason?: string) => void;
   onPause: (duration?: number) => void;
@@ -71,7 +73,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       const lastTime = storage.getLastCompletionTime(chain.id);
       setLastCompletionTime(lastTime);
     }
-  }, [chain.id, isDurationless]);
+  }, [chain.id, isDurationless, storage]);
 
   // 正向计时逻辑（无时长任务启用）
   useEffect(() => {
@@ -113,7 +115,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     return () => {
       clearInterval(interval);
     };
-  }, [session, isDurationless]);
+  }, [session, isDurationless, chain.minimumDuration]);
 
   // 计时逻辑（有时长时启用）
   useEffect(() => {
@@ -222,12 +224,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
     onComplete(description, notes);
   };
 
-  // 处理规则选择后的完成
-  const handleRuleBasedComplete = (description?: string, notes?: string) => {
-    setShowCompletionDialog(false);
-    // 这里我们已经有了规则选择，现在可以完成任务
-    onComplete(description, notes);
-  };
+
 
   // 处理规则选择（增强版本）
   const handleRuleSelected = async (rule: ExceptionRule, pauseOptions?: PauseOptions) => {
@@ -241,7 +238,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
         console.error('❌ 无效的规则对象:', rule);
         userFeedbackHandler.showErrorMessage(
           new EnhancedExceptionRuleException(
-            'RULE_NOT_FOUND' as any,
+            'RULE_NOT_FOUND' as keyof typeof EnhancedExceptionRuleException,
             '规则对象无效',
             { rule, pendingActionType }
           )
@@ -257,7 +254,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({
       console.log('🔧 准备使用规则:', { ruleId: rule.id, sessionContext, actionType: pendingActionType });
       
       // 使用规则并记录统计
-      const result = await exceptionRuleManager.useRule(rule.id, sessionContext, pendingActionType, pauseOptions);
+      await exceptionRuleManager.useRule(rule.id, sessionContext, pendingActionType, pauseOptions);
       
       // 隐藏进度
       userFeedbackHandler.hideProgress();
@@ -468,7 +465,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           localStorage.removeItem(AUTO_RESUME_STORAGE_KEY);
         }
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to clear auto resume data:', error);
+    }
     if (resumeTimeoutRef.current) {
       window.clearTimeout(resumeTimeoutRef.current);
       resumeTimeoutRef.current = null;
@@ -505,7 +504,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           resumeAt: new Date(resumeTime).toISOString(),
         })
       );
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to clear auto resume data:', error);
+    }
     setupAutoResumeTimer(resumeTime);
   };
 
@@ -526,7 +527,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({
           onResume();
         }
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to clear auto resume data:', error);
+    }
   }, [session.isPaused, session.chainId, session.startedAt, onResume]);
 
   // 倒计时显示

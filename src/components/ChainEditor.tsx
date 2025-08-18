@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Chain, ChainType } from '../types';
-import { ArrowLeft, Save, Headphones, Code, BookOpen, Dumbbell, Coffee, Target, Clock, Bell, Tag, Layers, Flame, Calendar, AlignLeft } from 'lucide-react';
+import { ArrowLeft, Save, Headphones, Code, BookOpen, Dumbbell, Coffee, Target, Clock, Bell, Tag, Flame, Calendar, AlignLeft } from 'lucide-react';
 import { PureDOMSlider } from './PureDOMSlider';
 import { ResponsiveContainer } from './ResponsiveContainer';
 import { SettingSection } from './SettingSection';
@@ -8,7 +8,7 @@ import { SliderContainer } from './SliderContainer';
 import { useLayoutOverflowDetection } from '../hooks/useLayoutOverflowDetection';
 import { useMobileOptimization, useTouchOptimization, useVirtualKeyboardAdaptation } from '../hooks/useMobileOptimization';
 import { usePerformanceMonitoring } from '../utils/performanceMonitor';
-import { useRenderCount, useWhyDidYouUpdate } from '../utils/renderOptimization';
+import { useWhyDidYouUpdate } from '../utils/renderOptimization';
 
 interface ChainEditorProps {
   chain?: Chain;
@@ -169,7 +169,6 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({
   
   // 性能监控
   const performance = usePerformanceMonitoring('ChainEditor');
-  const renderCount = useRenderCount('ChainEditor');
   
   // 调试重渲染原因
   useWhyDidYouUpdate('ChainEditor', {

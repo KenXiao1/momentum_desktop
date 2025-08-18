@@ -15,7 +15,7 @@ describe('Rule System Fixes', () => {
       const problematicRules = [
         {
           id: '1',
-          name: null as any, // 故意设置为null
+          name: null as unknown as string, // 故意设置为null
           chainId: 'test-chain',
           scope: 'chain',
           type: ExceptionRuleType.PAUSE_ONLY,
@@ -25,7 +25,7 @@ describe('Rule System Fixes', () => {
         },
         {
           id: '2',
-          name: undefined as any, // 故意设置为undefined
+          name: undefined as unknown as string, // 故意设置为undefined
           chainId: 'test-chain',
           scope: 'chain',
           type: ExceptionRuleType.PAUSE_ONLY,
@@ -235,12 +235,12 @@ describe('Rule System Fixes', () => {
         },
         {
           id: '3',
-          name: 123 as any, // 数字类型的name
+          name: 123 as unknown as string, // 数字类型的name
           chainId: 'test-chain',
           scope: 'chain',
           type: ExceptionRuleType.PAUSE_ONLY,
           createdAt: new Date(),
-          usageCount: 'invalid' as any, // 字符串类型的usageCount
+          usageCount: 'invalid' as unknown as number, // 字符串类型的usageCount
           isActive: true
         }
       ] as ExceptionRule[];

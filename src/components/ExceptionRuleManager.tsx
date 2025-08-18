@@ -35,7 +35,7 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
   onRuleSelected
 }) => {
   const [rules, setRules] = useState<ExceptionRule[]>([]);
-  const [filteredRules, setFilteredRules] = useState<ExceptionRule[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -47,7 +47,7 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
   // 编辑状态
   const [editingRule, setEditingRule] = useState<ExceptionRule | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showStats, setShowStats] = useState(false);
+
   
   // 表单状态
   const [formData, setFormData] = useState({

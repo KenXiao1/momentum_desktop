@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Sun, Moon, Monitor, Check } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
-import { AccessibilityAnnouncer, useThemeAnnouncer } from './AccessibilityAnnouncer';
+import { AccessibilityAnnouncer } from './AccessibilityAnnouncer';
+import { useThemeAnnouncer } from '../hooks/useThemeAnnouncer';
 
 interface ThemeToggleProps {
   className?: string;

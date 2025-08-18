@@ -40,7 +40,9 @@ jobs:
       - name: 运行代码检查（非发布标签时）
         if: startsWith(github.ref, 'refs/tags/v') == false
         continue-on-error: true
-        run: npm run lint || true
+        run: |
+          echo "在分支构建中跳过严格的lint检查"
+          npm run lint || echo "Lint检查发现问题，但不阻塞分支构建"
       
       - name: 构建应用
         run: npm run build

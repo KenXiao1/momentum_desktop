@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RuleSelectionDialog } from '../components/RuleSelectionDialog';
 import { VirtualizedRuleList } from '../components/VirtualizedRuleList';
@@ -402,7 +402,7 @@ describe('Rule System Performance Tests', () => {
       
       try {
         optimizer.searchRules(rules, 'test');
-      } catch (error) {
+      } catch {
         // Error should be thrown quickly
         const errorTime = performance.now() - startTime;
         expect(errorTime).toBeLessThan(50);

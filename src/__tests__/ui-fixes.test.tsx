@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ExceptionRuleManager } from '../components/ExceptionRuleManager';
 import { RuleSelectionDialog } from '../components/RuleSelectionDialog';
 import { ResponsiveContainer } from '../components/ResponsiveContainer';
@@ -126,7 +126,6 @@ describe('UI Fixes and Improvements', () => {
             );
 
             const button = screen.getByRole('button');
-            const computedStyle = window.getComputedStyle(button);
 
             // Check if touch target styles are applied
             expect(button).toHaveClass('touch-target');

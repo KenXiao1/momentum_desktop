@@ -17,7 +17,7 @@ interface AccessibleFormFieldProps {
   labelClassName?: string;
   description?: string;
   error?: string;
-  onChange?: (value: any) => void;
+  onChange?: (value: string | number | boolean) => void;
   onBlur?: () => void;
   children?: React.ReactNode;
 }
