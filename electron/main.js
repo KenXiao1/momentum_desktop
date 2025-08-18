@@ -8,7 +8,8 @@ import os from 'os';
 import archiver from 'archiver';
 import { createWriteStream, createReadStream } from 'fs';
 import StreamZip from 'node-stream-zip';
-import { updateElectronApp } from 'update-electron-app';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 
 // 定义__dirname变量（ES模块中没有内置）
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,9 @@ const __dirname = path.dirname(__filename);
 // 自动更新配置
 let updateAvailable = false;
 let updateInfo = null;
+let downloadProgress = { percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 };
+let isDownloading = false;
+let autoCheckEnabled = true; // 默认开启自动检查
 
 // 保持对主窗口和系统托盘的全局引用
 let mainWindow;
@@ -167,49 +171,105 @@ function createTray() {
   });
 }
 
-// 自动更新相关函数
+// electron-updater自动更新配置
+function setupAutoUpdater() {
+  // 开发环境跳过
+  if (process.env.NODE_ENV === 'development') {
+    console.log('开发环境，跳过自动更新配置');
+    return;
+  }
+
+  // 配置GitHub发布
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'enshulv',
+    repo: 'momentum_desktop'
+  });
+
+  // 监听更新可用事件
+  autoUpdater.on('update-available', (info) => {
+    console.log('发现更新:', info.version);
+    updateAvailable = true;
+    updateInfo = {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '新版本可用',
+      downloadUrl: `https://github.com/enshulv/momentum_desktop/releases/tag/v${info.version}`,
+      assets: []
+    };
+
+    // 检查是否开启自动更新
+    if (autoCheckEnabled) {
+      console.log('自动更新已开启，开始静默下载...');
+      isDownloading = true;
+      autoUpdater.downloadUpdate();
+      // 不立即通知渲染进程，等下载完成后再通知
+    } else {
+      // 如果没有开启自动更新，立即通知渲染进程
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('update-available', updateInfo);
+      }
+    }
+  });
+
+  // 监听更新不可用事件
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('当前已是最新版本');
+    updateAvailable = false;
+  });
+
+  // 监听下载进度
+  autoUpdater.on('download-progress', (progress) => {
+    downloadProgress = {
+      percent: Math.round(progress.percent),
+      bytesPerSecond: progress.bytesPerSecond,
+      total: progress.total,
+      transferred: progress.transferred
+    };
+    
+    console.log(`下载进度: ${downloadProgress.percent}%`);
+    
+    // 通知渲染进程下载进度
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('download-progress', downloadProgress);
+    }
+  });
+
+  // 监听下载完成
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('更新下载完成');
+    isDownloading = false;
+    
+    // 下载完成后，通知渲染进程有可用更新（此时才显示横幅）
+    if (mainWindow && mainWindow.webContents) {
+      console.log('下载完成，现在显示更新横幅');
+      mainWindow.webContents.send('update-downloaded', updateInfo);
+      // 如果之前因为自动下载而没有显示横幅，现在显示
+      mainWindow.webContents.send('update-available', updateInfo);
+    }
+  });
+
+  // 监听错误
+  autoUpdater.on('error', (error) => {
+    console.error('自动更新错误:', error);
+    isDownloading = false;
+    
+    // 通知渲染进程错误
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('update-error', error.message);
+    }
+  });
+}
+
+// 检查更新
 async function checkForUpdates() {
   try {
-    // 检查是否为生产环境
     if (process.env.NODE_ENV === 'development') {
       console.log('开发环境，跳过自动更新检查');
       return;
     }
 
-    const currentVersion = app.getVersion();
-    console.log('当前版本:', currentVersion);
-    
-    // 从GitHub API获取最新版本信息
-    const response = await fetch('https://api.github.com/repos/enshulv/momentum_desktop/releases/latest');
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    const releaseData = await response.json();
-    const latestVersion = releaseData.tag_name.replace('v', '');
-    
-    console.log('最新版本:', latestVersion);
-    
-    // 比较版本号
-    if (isNewerVersion(latestVersion, currentVersion)) {
-      updateAvailable = true;
-      updateInfo = {
-        version: latestVersion,
-        releaseNotes: releaseData.body || '新版本可用',
-        downloadUrl: releaseData.html_url,
-        assets: releaseData.assets
-      };
-      
-      // 通知渲染进程有更新可用
-      if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('update-available', updateInfo);
-      }
-      
-      console.log('发现新版本:', latestVersion);
-    } else {
-      console.log('当前已是最新版本');
-    }
+    console.log('检查更新...');
+    await autoUpdater.checkForUpdates();
   } catch (error) {
     console.error('检查更新失败:', error);
   }
@@ -239,21 +299,12 @@ app.on('ready', () => {
   createTray();
   
   // 配置自动更新
-  if (!app.isPackaged) {
-    console.log('开发环境，跳过自动更新配置');
-  } else {
-    try {
-      updateElectronApp({
-        repo: 'enshulv/momentum_desktop',
-        updateInterval: '1 hour'
-      });
-      console.log('自动更新已配置');
-    } catch (error) {
-      console.error('自动更新配置失败:', error);
-      // 降级到手动更新检查
-      setTimeout(checkForUpdates, 5000);
-    }
-  }
+  setupAutoUpdater();
+  
+  // 应用启动5秒后检查更新
+  setTimeout(() => {
+    checkForUpdates();
+  }, 5000);
 });
 
 // 所有窗口关闭时的处理（因为有系统托盘，所以不自动退出）
@@ -568,19 +619,49 @@ ipcMain.handle('update:check-manual', async () => {
 
 // 开始下载更新
 ipcMain.handle('update:download', async () => {
-  if (!updateInfo) {
+  if (!updateAvailable || !updateInfo) {
     return { success: false, error: '没有可用的更新' };
   }
   
   try {
-    // 在实际应用中，这里会使用electron-updater来下载
-    // 现在我们只是打开下载页面
-    const { shell } = await import('electron');
-    await shell.openExternal(updateInfo.downloadUrl);
+    if (process.env.NODE_ENV === 'development') {
+      // 开发环境模拟下载
+      console.log('开发环境，模拟下载更新');
+      return { success: true, message: '开发环境模拟下载' };
+    }
+
+    console.log('开始下载更新...');
+    isDownloading = true;
+    await autoUpdater.downloadUpdate();
     
     return { success: true };
   } catch (error) {
-    console.error('打开下载页面失败:', error);
+    console.error('下载更新失败:', error);
+    isDownloading = false;
+    return { success: false, error: error.message };
+  }
+});
+
+// 获取下载状态
+ipcMain.handle('update:get-download-status', () => {
+  return {
+    isDownloading,
+    progress: downloadProgress
+  };
+});
+
+// 安装更新
+ipcMain.handle('update:install', () => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('开发环境，跳过安装更新');
+    return { success: false, error: '开发环境不支持自动安装' };
+  }
+
+  try {
+    autoUpdater.quitAndInstall();
+    return { success: true };
+  } catch (error) {
+    console.error('安装更新失败:', error);
     return { success: false, error: error.message };
   }
 });
@@ -588,6 +669,13 @@ ipcMain.handle('update:download', async () => {
 // 获取应用版本
 ipcMain.handle('app:get-version', () => {
   return app.getVersion();
+});
+
+// 设置自动检查更新开关
+ipcMain.handle('update:set-auto-check', (event, enabled) => {
+  autoCheckEnabled = enabled;
+  console.log('自动检查更新设置:', enabled ? '开启' : '关闭');
+  return { success: true };
 });
 
 // shell 外部链接打开
@@ -600,4 +688,189 @@ ipcMain.handle('shell:open-external', async (_event, targetUrl) => {
     console.error('打开外部链接失败:', error);
     return false;
   }
+});
+
+// ===== 测试函数 =====
+
+// 模拟发现更新
+ipcMain.handle('test:simulate-update-available', () => {
+  console.log('🧪 测试: 模拟发现更新');
+  updateAvailable = true;
+  updateInfo = {
+    version: '1.1.0',
+    releaseNotes: '测试版本 - 包含新功能和性能优化\n\n- 添加了自动更新功能\n- 优化了用户界面\n- 修复了若干bug',
+    downloadUrl: 'https://github.com/enshulv/momentum_desktop/releases/latest',
+    assets: []
+  };
+  
+  // 通知渲染进程
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('update-available', updateInfo);
+  }
+  
+  return { success: true, message: '已模拟发现更新' };
+});
+
+// 模拟下载进度
+ipcMain.handle('test:simulate-download-progress', async () => {
+  console.log('🧪 测试: 模拟下载进度');
+  isDownloading = true;
+  
+  // 模拟下载进度从0到100%
+  for (let percent = 0; percent <= 100; percent += 10) {
+    downloadProgress = {
+      percent,
+      bytesPerSecond: 1024 * 1024 * 2, // 2MB/s
+      total: 1024 * 1024 * 50, // 50MB
+      transferred: (1024 * 1024 * 50 * percent) / 100
+    };
+    
+    console.log(`📥 下载进度: ${percent}%`);
+    
+    // 通知渲染进程下载进度
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('download-progress', downloadProgress);
+    }
+    
+    // 等待500ms模拟下载时间
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
+  // 下载完成
+  isDownloading = false;
+  console.log('✅ 模拟下载完成');
+  
+  // 通知渲染进程下载完成
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('update-downloaded', updateInfo);
+  }
+  
+  return { success: true, message: '下载模拟完成' };
+});
+
+// 模拟下载错误
+ipcMain.handle('test:simulate-download-error', () => {
+  console.log('🧪 测试: 模拟下载错误');
+  isDownloading = false;
+  
+  // 通知渲染进程错误
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send('update-error', '模拟的下载错误 - 网络连接失败');
+  }
+  
+  return { success: true, message: '已模拟下载错误' };
+});
+
+// 强制下载最新版本（模拟低版本触发真实更新逻辑）
+ipcMain.handle('test:force-download-latest', async () => {
+  console.log('🧪 测试: 强制模拟低版本触发真实更新逻辑');
+  
+  try {
+    // 从GitHub API获取最新版本信息
+    const response = await fetch('https://api.github.com/repos/enshulv/momentum_desktop/releases/latest');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const releaseData = await response.json();
+    const latestVersion = releaseData.tag_name.replace('v', '');
+    
+    console.log(`📋 GitHub最新版本: v${latestVersion}`);
+    console.log(`🔄 模拟本机版本降级到: v0.0.9`);
+    
+    // 临时修改app.getVersion()的返回值
+    const originalGetVersion = app.getVersion;
+    app.getVersion = () => '0.0.9';
+    
+    // 强制设置为有更新可用
+    updateAvailable = true;
+    updateInfo = {
+      version: latestVersion,
+      releaseNotes: releaseData.body || `测试更新: 从 v0.0.9 升级到 v${latestVersion}`,
+      downloadUrl: releaseData.html_url,
+      assets: releaseData.assets
+    };
+    
+    console.log(`🚀 触发真实更新逻辑: v0.0.9 → v${latestVersion}`);
+    
+    // 模拟autoUpdater的update-available事件
+    if (autoCheckEnabled) {
+      console.log('🔽 自动更新已开启，开始静默下载...');
+      isDownloading = true;
+      
+      // 模拟下载过程（使用真实的进度更新）
+      setTimeout(async () => {
+        console.log('📥 开始模拟真实下载流程...');
+        
+        // 模拟下载进度
+        for (let percent = 0; percent <= 100; percent += 10) {
+          downloadProgress = {
+            percent,
+            bytesPerSecond: 1024 * 1024 * 3, // 3MB/s
+            total: 1024 * 1024 * 80, // 80MB
+            transferred: (1024 * 1024 * 80 * percent) / 100
+          };
+          
+          if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('download-progress', downloadProgress);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+        
+        // 下载完成
+        isDownloading = false;
+        console.log('✅ 模拟下载完成，现在显示更新横幅');
+        
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('update-downloaded', updateInfo);
+          mainWindow.webContents.send('update-available', updateInfo);
+        }
+      }, 1000);
+    } else {
+      // 如果自动更新关闭，立即显示横幅
+      if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('update-available', updateInfo);
+      }
+    }
+    
+    // 5分钟后恢复原始版本号
+    setTimeout(() => {
+      app.getVersion = originalGetVersion;
+      console.log('🔄 已恢复原始版本号');
+    }, 5 * 60 * 1000);
+    
+    return { 
+      success: true, 
+      message: `模拟从 v0.0.9 更新到 v${latestVersion}`,
+      currentVersion: '0.0.9',
+      latestVersion: latestVersion,
+      autoDownload: autoCheckEnabled
+    };
+  } catch (error) {
+    console.error('模拟更新失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 重置更新状态
+ipcMain.handle('test:reset-update-state', () => {
+  console.log('🧪 测试: 重置更新状态');
+  updateAvailable = false;
+  updateInfo = null;
+  isDownloading = false;
+  downloadProgress = { percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 };
+  
+  return { success: true, message: '更新状态已重置' };
+});
+
+// 获取当前测试状态
+ipcMain.handle('test:get-status', () => {
+  return {
+    updateAvailable,
+    updateInfo,
+    isDownloading,
+    downloadProgress
+  };
 });

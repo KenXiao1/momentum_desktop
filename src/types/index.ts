@@ -499,9 +499,37 @@ declare global {
         checkStatus: () => Promise<UpdateStatus>;
         checkManual: () => Promise<UpdateStatus>;
         download: () => Promise<UpdateDownloadResult>;
+        getDownloadStatus: () => Promise<{
+          isDownloading: boolean;
+          progress: { percent: number; bytesPerSecond: number; total: number; transferred: number };
+        }>;
+        install: () => Promise<UpdateDownloadResult>;
+        setAutoCheck: (enabled: boolean) => Promise<{ success: boolean }>;
       };
       app: {
         getVersion: () => Promise<string>;
+      };
+      shell: {
+        openExternal: (url: string) => Promise<boolean>;
+      };
+      test: {
+        simulateUpdateAvailable: () => Promise<{ success: boolean; message: string }>;
+        simulateDownloadProgress: () => Promise<{ success: boolean; message: string }>;
+        simulateDownloadError: () => Promise<{ success: boolean; message: string }>;
+        forceDownloadLatest: () => Promise<{
+          success: boolean;
+          message: string;
+          currentVersion?: string;
+          latestVersion?: string;
+          autoDownload?: boolean;
+        }>;
+        resetUpdateState: () => Promise<{ success: boolean; message: string }>;
+        getStatus: () => Promise<{
+          updateAvailable: boolean;
+          updateInfo: any;
+          isDownloading: boolean;
+          downloadProgress: { percent: number; bytesPerSecond: number; total: number; transferred: number };
+        }>;
       };
     };
   }

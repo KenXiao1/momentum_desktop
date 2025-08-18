@@ -10,6 +10,7 @@ import { GroupView } from './components/GroupView';
 import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
 import WindowControls from './components/WindowControls'; // 添加这一行导入
 import { storage as localStorageUtils } from './utils/storage';
+import './utils/testUpdater'; // 加载测试工具
 
 import { isSupabaseConfigured } from './lib/supabase';
 import { isSessionExpired } from './utils/time';

@@ -282,9 +282,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       />
       
       {/* 对话框容器 */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 w-[800px] max-w-[95vw] max-h-[95vh] overflow-y-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-[800px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
         {/* 标题栏 */}
-        <div className="flex items-center justify-between mb-6 sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div className="flex items-center justify-between p-6 pb-0 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -301,7 +301,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* 标签页 */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+        <div className="flex space-x-1 m-6 mb-0 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 flex-shrink-0">
           <button
             onClick={() => setActiveTab('window')}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
@@ -339,13 +339,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">加载中...</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
+        {/* 可滚动内容区域 */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">加载中...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
             {/* 窗口设置标签页 */}
             {activeTab === 'window' && (
               <div className="space-y-6">
@@ -660,11 +662,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         {/* 按钮组 */}
-        <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200 dark:border-gray-600">
+        <div className="flex justify-between items-center p-6 pt-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
           <button
             onClick={handleReset}
             className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"

@@ -11,12 +11,61 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
   const [isChecking, setIsChecking] = useState(false);
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(true);
   const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState<{
+    isDownloading: boolean;
+    progress: { percent: number; bytesPerSecond: number; total: number; transferred: number };
+  }>({
+    isDownloading: false,
+    progress: { percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 }
+  });
 
   useEffect(() => {
     // 获取当前版本
     getCurrentVersion();
-    // 获取自动更新偏好
-    setAutoCheckUpdates(userPreferences.getAutoCheckUpdates());
+    
+    // 获取自动更新偏好并同步到主进程
+    const autoCheckEnabled = userPreferences.getAutoCheckUpdates();
+    setAutoCheckUpdates(autoCheckEnabled);
+    
+    // 同步设置到主进程
+    if (window.electronAPI?.update?.setAutoCheck) {
+      window.electronAPI.update.setAutoCheck(autoCheckEnabled);
+    }
+    
+    // 监听下载进度
+    if (window.electron?.ipcRenderer) {
+      const handleDownloadProgress = (progress: any) => {
+        setDownloadStatus(prev => ({
+          ...prev,
+          isDownloading: true,
+          progress
+        }));
+      };
+
+      const handleUpdateDownloaded = () => {
+        setDownloadStatus(prev => ({
+          ...prev,
+          isDownloading: false
+        }));
+      };
+
+      const handleUpdateError = () => {
+        setDownloadStatus(prev => ({
+          ...prev,
+          isDownloading: false
+        }));
+      };
+
+      window.electron.ipcRenderer.on('download-progress', handleDownloadProgress);
+      window.electron.ipcRenderer.on('update-downloaded', handleUpdateDownloaded);
+      window.electron.ipcRenderer.on('update-error', handleUpdateError);
+
+      return () => {
+        window.electron.ipcRenderer.removeListener('download-progress', handleDownloadProgress);
+        window.electron.ipcRenderer.removeListener('update-downloaded', handleUpdateDownloaded);
+        window.electron.ipcRenderer.removeListener('update-error', handleUpdateError);
+      };
+    }
   }, []);
 
   const getCurrentVersion = async () => {
@@ -40,22 +89,33 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
       setLastCheckTime(new Date());
       
       if (window.electronAPI?.update?.checkManual) {
-        await window.electronAPI.update.checkManual();
-        // 静默：顶部横幅会处理显示
+        const result = await window.electronAPI.update.checkManual();
+        
+        // 如果没有可用更新，提示用户
+        if (!result.updateAvailable) {
+          alert('目前已是最新版本！');
+        }
+        // 如果有更新，顶部横幅会处理显示
       } else {
-        // Web环境模拟检查：静默
-        setTimeout(() => {}, 300);
+        // Web环境模拟检查
+        alert('目前已是最新版本！');
       }
     } catch (error) {
       console.error('手动检查更新失败:', error);
+      alert('检查更新失败，请稍后重试');
     } finally {
       setIsChecking(false);
     }
   };
 
-  const handleAutoUpdateToggle = (enabled: boolean) => {
+  const handleAutoUpdateToggle = async (enabled: boolean) => {
     setAutoCheckUpdates(enabled);
     userPreferences.setAutoCheckUpdates(enabled);
+    
+    // 通知主进程自动检查设置的变化
+    if (window.electronAPI?.update?.setAutoCheck) {
+      await window.electronAPI.update.setAutoCheck(enabled);
+    }
   };
 
   const handleOpenGitHub = () => {
@@ -65,6 +125,18 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
     } else {
       window.open(githubUrl, '_blank');
     }
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatSpeed = (bytesPerSecond: number): string => {
+    return formatBytes(bytesPerSecond) + '/s';
   };
 
   return (
@@ -105,6 +177,36 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
             <span className="text-gray-900 dark:text-white ml-2">Electron + React + TypeScript</span>
           </div>
         </div>
+
+        {/* 下载进度条 */}
+        {downloadStatus.isDownloading && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">正在下载最新安装包...</span>
+                <span className="font-mono text-gray-900 dark:text-white">
+                  {downloadStatus.progress.percent}%
+                </span>
+              </div>
+              
+              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${downloadStatus.progress.percent}%` }}
+                />
+              </div>
+              
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                <span>
+                  {formatBytes(downloadStatus.progress.transferred)} / {formatBytes(downloadStatus.progress.total)}
+                </span>
+                <span>
+                  {formatSpeed(downloadStatus.progress.bytesPerSecond)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
           <button

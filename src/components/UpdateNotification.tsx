@@ -19,6 +19,8 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onDismis
   const [isChecking, setIsChecking] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [currentVersion, setCurrentVersion] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [updateDownloaded, setUpdateDownloaded] = useState(false);
 
   useEffect(() => {
     const shouldAutoCheck = userPreferences.getAutoCheckUpdates();
@@ -33,12 +35,26 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onDismis
       const handleUpdateAvailable = (info: UpdateInfo) => {
         setUpdateInfo(info);
         setIsVisible(true);
+        setUpdateDownloaded(false);
+      };
+
+      const handleUpdateDownloaded = () => {
+        setIsDownloading(false);
+        setUpdateDownloaded(true);
+      };
+
+      const handleUpdateError = () => {
+        setIsDownloading(false);
       };
 
       window.electron.ipcRenderer.on('update-available', handleUpdateAvailable);
+      window.electron.ipcRenderer.on('update-downloaded', handleUpdateDownloaded);
+      window.electron.ipcRenderer.on('update-error', handleUpdateError);
 
       return () => {
         window.electron.ipcRenderer.removeListener('update-available', handleUpdateAvailable);
+        window.electron.ipcRenderer.removeListener('update-downloaded', handleUpdateDownloaded);
+        window.electron.ipcRenderer.removeListener('update-error', handleUpdateError);
       };
     }
   }, []);
@@ -92,12 +108,28 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onDismis
 
   const handleDownloadUpdate = async () => {
     try {
+      setIsDownloading(true);
       if (window.electronAPI?.update?.download) {
-        await window.electronAPI.update.download();
-        // 静默处理：不弹窗
+        const result = await window.electronAPI.update.download();
+        if (!result.success) {
+          console.error('下载更新失败:', result.error);
+          setIsDownloading(false);
+        }
+        // 下载开始后，进度会通过IPC事件更新
       }
     } catch (error) {
       console.error('下载更新失败:', error);
+      setIsDownloading(false);
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    try {
+      if (window.electronAPI?.update?.install) {
+        await window.electronAPI.update.install();
+      }
+    } catch (error) {
+      console.error('安装更新失败:', error);
     }
   };
 
@@ -141,19 +173,45 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onDismis
               {formatReleaseNotes(updateInfo.releaseNotes || '新版本包含性能改进和错误修复')}
             </div>
             <div className="flex items-center justify-end space-x-2">
-              <button
-                onClick={() => setIsVisible(false)}
-                className="px-2.5 py-1 text-xs rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                稍后
-              </button>
-              <button
-                onClick={handleDownloadUpdate}
-                className="inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-md bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>更新</span>
-              </button>
+              {!updateDownloaded && (
+                <button
+                  onClick={() => setIsVisible(false)}
+                  className="px-2.5 py-1 text-xs rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  disabled={isDownloading}
+                >
+                  稍后
+                </button>
+              )}
+              
+              {!updateDownloaded && !isDownloading && (
+                <button
+                  onClick={handleDownloadUpdate}
+                  className="inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-md bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>下载更新</span>
+                </button>
+              )}
+
+              {isDownloading && (
+                <button
+                  disabled
+                  className="inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-md bg-gray-400 text-white cursor-not-allowed"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>下载中...</span>
+                </button>
+              )}
+
+              {updateDownloaded && (
+                <button
+                  onClick={handleInstallUpdate}
+                  className="inline-flex items-center space-x-1 px-3 py-1 text-xs rounded-md bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>立即安装</span>
+                </button>
+              )}
             </div>
           </div>
         )}

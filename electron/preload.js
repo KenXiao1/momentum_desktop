@@ -48,12 +48,23 @@ try {
       checkStatus: () => ipcRenderer.invoke('update:check-status'),
       checkManual: () => ipcRenderer.invoke('update:check-manual'),
       download: () => ipcRenderer.invoke('update:download'),
+      getDownloadStatus: () => ipcRenderer.invoke('update:get-download-status'),
+      install: () => ipcRenderer.invoke('update:install'),
+      setAutoCheck: (enabled) => ipcRenderer.invoke('update:set-auto-check', enabled),
     },
     app: {
       getVersion: () => ipcRenderer.invoke('app:get-version'),
     },
     shell: {
       openExternal: (url) => ipcRenderer.invoke('shell:open-external', url)
+    },
+    test: {
+      simulateUpdateAvailable: () => ipcRenderer.invoke('test:simulate-update-available'),
+      simulateDownloadProgress: () => ipcRenderer.invoke('test:simulate-download-progress'),
+      simulateDownloadError: () => ipcRenderer.invoke('test:simulate-download-error'),
+      forceDownloadLatest: () => ipcRenderer.invoke('test:force-download-latest'),
+      resetUpdateState: () => ipcRenderer.invoke('test:reset-update-state'),
+      getStatus: () => ipcRenderer.invoke('test:get-status')
     }
   });
   
