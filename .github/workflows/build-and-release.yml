@@ -13,11 +13,7 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-    
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     
     steps:
       - name: 检出代码
@@ -47,23 +43,7 @@ jobs:
       - name: 构建应用
         run: npm run build
       
-      - name: 构建Electron应用 (Windows)
-        if: matrix.os == 'windows-latest'
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: 构建Electron应用 (macOS)
-        if: matrix.os == 'macos-latest'
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-      
-      - name: 构建Electron应用 (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: 构建Electron应用
         run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +51,7 @@ jobs:
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.os }}
+          name: dist-windows
           path: dist_electron/
           retention-days: 7
 
@@ -105,11 +85,6 @@ jobs:
         with:
           files: |
             dist_electron/**/*.exe
-            dist_electron/**/*.dmg
-            dist_electron/**/*.zip
-            dist_electron/**/*.AppImage
-            dist_electron/**/*.deb
-            dist_electron/**/*.rpm
           body: |
             ## 🚀 新版本发布
             
@@ -117,8 +92,6 @@ jobs:
             
             ### 📦 下载链接
             - **Windows x64**: `.exe` 安装包 (NSIS) / `.exe` 便携版
-            - **macOS x64/ARM64**: `.dmg` 镜像文件 / `.zip` 压缩包
-            - **Linux x64**: `.AppImage` 可执行文件 / `.deb` / `.rpm` 安装包
             
             ### 🔄 自动更新
             如果您已经安装了之前的版本，应用会自动检测并提示更新。
