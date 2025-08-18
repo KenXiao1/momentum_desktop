@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AppState, Chain, ScheduledSession, ActiveSession, CompletionHistory } from './types';
 import { Dashboard } from './components/Dashboard';
 import { RSIPView } from './components/RSIPView';
@@ -8,16 +8,19 @@ import { FocusMode } from './components/FocusMode';
 import { ChainDetail } from './components/ChainDetail';
 import { GroupView } from './components/GroupView';
 import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
+import WindowControls from './components/WindowControls'; // 添加这一行导入
 import { storage as localStorageUtils } from './utils/storage';
-import { supabaseStorage } from './utils/supabaseStorage';
+
 import { isSupabaseConfigured } from './lib/supabase';
 import { isSessionExpired } from './utils/time';
 import { buildChainTree, getNextUnitInGroup, updateGroupCompletions } from './utils/chainTree';
 import { notificationManager } from './utils/notifications';
 import { startGroupTimer, isGroupExpired, resetGroupProgress } from './utils/timeLimit';
 import { forwardTimerManager } from './utils/forwardTimer';
+import { scheduleTimerManager } from './utils/scheduleTimer';
 import { initializeRuleSystem } from './utils/initializeRuleSystem';
 import { runMigration } from './utils/migration';
+import { dataStorageManager } from './services/DataStorageManager';
 import './utils/quickFix'; // 自动运行快速修复
 import './utils/debugRuleCreation'; // 调试工具
 import './utils/emergencyFix'; // 紧急修复
@@ -25,6 +28,7 @@ import './utils/simpleTest'; // 简单测试
 import './utils/fixRuleIds'; // 修复规则ID
 import './utils/directFix'; // 直接修复
 import './utils/ultimateFix'; // 终极修复
+import './utils/testScheduleReminder'; // 预约提醒测试工具（仅开发环境）
 
 function App() {
   const [state, setState] = useState<AppState>({
@@ -38,33 +42,48 @@ function App() {
     rsipNodes: [],
     rsipMeta: {},
     taskTimeStats: [],
+    exceptionRules: [],
+    ruleUsageRecords: [],
   });
 
   const [showAuxiliaryJudgment, setShowAuxiliaryJudgment] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Determine storage source immediately based on Supabase configuration
-  const storage = isSupabaseConfigured ? supabaseStorage : localStorageUtils;
+  // Use data storage manager instead of direct storage selection
+  const [storage, setStorage] = useState(localStorageUtils);
   
   useEffect(() => {
-    console.log('存储源确定:', isSupabaseConfigured ? 'Supabase' : 'LocalStorage');
-    
-    // 初始化规则系统
-    initializeRuleSystem().then(result => {
-      if (result.success) {
-        console.log('✅ 规则系统初始化成功');
-      } else {
-        console.error('❌ 规则系统初始化失败:', result.message);
-      }
-    }).catch(error => {
-      console.error('❌ 规则系统初始化异常:', error);
-    });
+    const initializeApp = async () => {
+      try {
+        // 初始化数据存储管理器
+        await dataStorageManager.initialize();
+        const activeStorage = dataStorageManager.getStorage();
+        setStorage(activeStorage);
+        
+        console.log('存储源确定:', dataStorageManager.getStorageMode());
+        
+        // 初始化规则系统
+        const ruleResult = await initializeRuleSystem();
+        if (ruleResult.success) {
+          console.log('✅ 规则系统初始化成功');
+        } else {
+          console.error('❌ 规则系统初始化失败:', ruleResult.message);
+        }
 
-    // 运行迁移脚本
-    runMigration();
-    
-    setIsInitialized(true);
+        // 运行迁移脚本
+        runMigration();
+        
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('应用初始化失败:', error);
+        // 即使初始化失败，也要确保应用能够启动
+        setStorage(localStorageUtils);
+        setIsInitialized(true);
+      }
+    };
+
+    initializeApp();
   }, []);
 
   const renderContent = () => {
@@ -137,7 +156,6 @@ function App() {
               storage={storage}
               onComplete={handleCompleteSession}
               onInterrupt={handleInterruptSession}
-              onAddException={handleAddException}
               onPause={handlePauseSession}
               onResume={handleResumeSession}
             />
@@ -200,14 +218,14 @@ function App() {
             <GroupView
               group={groupNode}
               scheduledSessions={state.scheduledSessions}
-             availableUnits={state.chains}
+              availableUnits={chainTree}
               onBack={handleBackToDashboard}
               onStartChain={handleStartChain}
               onScheduleChain={handleScheduleChain}
               onEditChain={(chainId) => handleEditChain(chainId)}
               onDeleteChain={handleDeleteChain}
               onAddUnit={() => handleCreateChain(state.viewingChainId!)}
-             onImportUnits={handleImportUnits}
+              onImportUnits={handleImportUnits}
             />
             {showAuxiliaryJudgment && (
               <AuxiliaryJudgment
@@ -405,10 +423,28 @@ function App() {
     return () => clearInterval(interval);
   }, [storage, isInitialized]);
 
-  // Clean up expired scheduled sessions periodically
+  // Initialize schedule timer manager and clean up expired scheduled sessions
   useEffect(() => {
     if (!isInitialized) return;
     
+    // 设置过期回调函数
+    scheduleTimerManager.setOnExpiredCallback((chainId: string) => {
+      setShowAuxiliaryJudgment(chainId);
+    });
+
+    // 初始化所有当前的预约会话到计时器管理器
+    state.scheduledSessions.forEach(session => {
+      const chain = state.chains.find(c => c.id === session.chainId);
+      if (chain && !isSessionExpired(session.expiresAt)) {
+        scheduleTimerManager.addSchedule(
+          session.chainId,
+          chain.name,
+          session.expiresAt
+        );
+      }
+    });
+
+    // 定期清理过期的预约会话
     const interval = setInterval(() => {
       setState(prev => {
         const expiredSessions = prev.scheduledSessions.filter(
@@ -419,18 +455,11 @@ function App() {
         );
         
         if (expiredSessions.length > 0) {
-          // 为每个过期的会话显示失败通知
+          // 从计时器管理器中移除过期的会话
           expiredSessions.forEach(session => {
-            const chain = prev.chains.find(c => c.id === session.chainId);
-            if (chain) {
-              notificationManager.notifyScheduleFailed(chain.name);
-            }
+            scheduleTimerManager.removeSchedule(session.chainId);
           });
           
-          // Show auxiliary judgment for the first expired session
-          if (expiredSessions.length > 0) {
-            setShowAuxiliaryJudgment(expiredSessions[0].chainId);
-          }
           storage.saveScheduledSessions(activeScheduledSessions);
           return { ...prev, scheduledSessions: activeScheduledSessions };
         }
@@ -439,14 +468,22 @@ function App() {
       });
     }, 10000); // Check every 10 seconds for better responsiveness
 
-    return () => clearInterval(interval);
-  }, [storage, isInitialized]);
+    return () => {
+      clearInterval(interval);
+      // 清理计时器管理器中的所有预约
+      state.scheduledSessions.forEach(session => {
+        scheduleTimerManager.removeSchedule(session.chainId);
+      });
+    };
+  }, [storage, isInitialized, state.scheduledSessions, state.chains]);
 
-  const handleCreateChain = () => {
+  const handleCreateChain = (parentId?: string) => {
     setState(prev => ({
       ...prev,
       currentView: 'editor',
       editingChain: null,
+      // Store the parentId for the chain editor
+      viewingChainId: parentId || null,
     }));
   };
 
@@ -599,6 +636,13 @@ function App() {
           safelySaveChains(updatedChains)
         ]);
         
+        // Add to schedule timer manager
+        scheduleTimerManager.addSchedule(
+          chainId,
+          chain.name,
+          scheduledSession.expiresAt
+        );
+
         // Update state after successful save
         setState(prev => ({ 
           ...prev,
@@ -660,7 +704,7 @@ function App() {
         } else {
           // No next unit available - all tasks completed or no tasks in group
           console.log(`任务群 ${chain.name} 没有可用的下一个任务`);
-          notificationManager.notifyTaskCompleted(chain.name, 0, '所有任务已完成');
+          notificationManager.notifyTaskCompleted(chain.name, 0);
           return;
         }
       } else {
@@ -681,6 +725,9 @@ function App() {
     const updatedScheduledSessions = state.scheduledSessions.filter(
       session => session.chainId !== chainId
     );
+
+    // Remove from schedule timer manager
+    scheduleTimerManager.removeSchedule(chainId);
 
     setState(prev => {
       storage.saveActiveSession(activeSession);
@@ -860,6 +907,9 @@ function App() {
   };
 
   const handleAuxiliaryJudgmentFailure = (chainId: string) => {
+    // Remove from schedule timer manager
+    scheduleTimerManager.removeSchedule(chainId);
+    
     setState(prev => {
       // Remove the scheduled session
       const updatedScheduledSessions = prev.scheduledSessions.filter(
@@ -893,6 +943,9 @@ function App() {
   };
 
   const handleAuxiliaryJudgmentAllow = (chainId: string, exceptionRule: string) => {
+    // Remove from schedule timer manager
+    scheduleTimerManager.removeSchedule(chainId);
+    
     setState(prev => {
       // Remove the scheduled session
       const updatedScheduledSessions = prev.scheduledSessions.filter(
@@ -928,30 +981,7 @@ function App() {
     setShowAuxiliaryJudgment(chainId);
   };
 
-  const handleAddException = (exceptionRule: string) => {
-    if (!state.activeSession) return;
 
-    setState(prev => {
-      const updatedChains = prev.chains.map(chain =>
-        chain.id === prev.activeSession!.chainId
-          ? {
-              ...chain,
-              exceptions: [...(chain.exceptions || []), exceptionRule]
-            }
-          : chain
-      );
-      
-      // 使用安全保存方法保持回收箱数据完整
-      safelySaveChains(updatedChains).catch(error => {
-        console.error('添加异常时保存链条数据失败:', error);
-      });
-      
-      return {
-        ...prev,
-        chains: updatedChains,
-      };
-    });
-  };
 
   const handleViewChainDetail = (chainId: string) => {
     const chain = state.chains.find(c => c.id === chainId);
@@ -982,6 +1012,9 @@ function App() {
       
       // Reload chains to reflect the soft deletion
       const updatedChains = await storage.getActiveChains();
+      
+      // Remove from schedule timer manager
+      scheduleTimerManager.removeSchedule(chainId);
       
       setState(prev => {
         // Remove any scheduled sessions for this chain
@@ -1175,7 +1208,12 @@ function App() {
     }
   };
 
-  return renderContent();
+  return (
+    <div className="min-h-screen pt-10">
+      <WindowControls />
+      {renderContent()}
+    </div>
+  );
 }
 
 export default App;

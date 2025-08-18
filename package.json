@@ -3,15 +3,43 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development vite dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron --experimental-specifier-resolution=node .\"",
+    "electron:build": "vite build && electron-builder"
+  },
+  "build": {
+    "appId": "com.example.momentum",
+    "productName": "Momentum",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/app-icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/app-icon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/app-icon.png"
+    }
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.0",
+    "archiver": "^7.0.1",
     "lucide-react": "^0.344.0",
+    "node-stream-zip": "^1.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -21,6 +49,10 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.18",
+    "concurrently": "^9.2.0",
+    "cross-env": "^10.0.0",
+    "electron": "^37.3.0",
+    "electron-builder": "^26.0.12",
     "eslint": "^9.9.1",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.11",
@@ -29,6 +61,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "wait-on": "^8.0.4"
   }
 }

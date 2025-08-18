@@ -70,24 +70,24 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const idMap = new Map<string, string>();
 
       // 预先为每个导入链生成新ID
-      parsedData.chains.forEach((chain: any) => {
+      parsedData.chains.forEach((chain: Partial<Chain>) => {
         const newId = crypto.randomUUID();
         idMap.set(chain.id || crypto.randomUUID(), newId);
       });
 
       // 转换和验证链数据
-      const importedChains: Chain[] = parsedData.chains.map((chain: any, index: number) => {
+      const importedChains: Chain[] = parsedData.chains.map((chain: Partial<Chain>, index: number) => {
         // 验证必需字段
         const requiredFields = ['name', 'trigger', 'duration', 'description', 'auxiliarySignal', 'auxiliaryDuration', 'auxiliaryCompletionTrigger'];
         for (const field of requiredFields) {
-          if (!chain[field]) {
+          if (!(chain as Record<string, unknown>)[field]) {
             throw new Error(`链条 ${index + 1} 缺少必需字段: ${field}`);
           }
         }
 
         return {
-          id: idMap.get(chain.id) || crypto.randomUUID(), // 新ID
-          name: chain.name,
+          id: idMap.get(chain.id || '') || crypto.randomUUID(), // 新ID
+          name: chain.name!,
           parentId: chain.parentId ? idMap.get(chain.parentId) : undefined, // 维护层级
           type: chain.type || 'unit',
           sortOrder: chain.sortOrder || Math.floor(Date.now() / 1000) + index,
@@ -111,9 +111,9 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       });
 
       // 兼容导入历史记录
-      const importedHistory: CompletionHistory[] = (parsedData.completionHistory || []).map((h: any) => ({
-        chainId: idMap.get(h.chainId) || h.chainId,
-        completedAt: new Date(h.completedAt),
+      const importedHistory: CompletionHistory[] = (parsedData.completionHistory || []).map((h: Partial<CompletionHistory>) => ({
+        chainId: idMap.get(h.chainId || '') || h.chainId || '',
+        completedAt: new Date(h.completedAt || new Date()),
         duration: Number(h.duration) || 0,
         wasSuccessful: !!h.wasSuccessful,
         reasonForFailure: h.reasonForFailure,
@@ -198,6 +198,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
               <Upload size={16} />
               <span>导入数据</span>
             </button>
+
           </div>
         ) : (
           <div className="mb-8 text-center">
@@ -361,7 +362,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             </div>
           </div>
         )}
+
+
       </div>
+
+
     </div>
   );
 };

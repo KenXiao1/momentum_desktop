@@ -203,6 +203,21 @@ class NotificationManager {
   }
 
   /**
+   * 任务失败通知
+   */
+  async notifyTaskFailed(chainName: string, reason?: string) {
+    if (!this.isNotificationsEnabled()) return null;
+    
+    return this.showNotification({
+      title: '任务失败',
+      body: reason ? `"${chainName}": ${reason}` : `"${chainName}"执行失败`,
+      icon: '/vite.svg',
+      tag: `task-failed-${Date.now()}`, // 确保每次通知都是唯一的
+      requireInteraction: true,
+    });
+  }
+
+  /**
    * 检查是否支持通知
    */
   isSupported(): boolean {

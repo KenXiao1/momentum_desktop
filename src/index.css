@@ -1,6 +1,27 @@
+@import './styles/electron-scrollbar.css';  /* 修正后的位置 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 强制覆盖任何可能的滚动条样式 */
+@layer utilities {
+  /* 默认隐藏所有滚动条 */
+  ::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+  }
+  
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-track-piece,
+  ::-webkit-scrollbar-corner {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: none !important;
+  }
+}
 
 /* Theme transition for smooth switching */
 * {
@@ -15,6 +36,18 @@
 @layer base {
   * {
     @apply antialiased;
+  }
+  
+  /* 允许滚动但隐藏系统滚动条 */
+  html, body {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  #root {
+    height: 100%;
+    overflow: visible;
   }
   
   body {
@@ -50,6 +83,15 @@
 }
 
 @layer components {
+  /* Electron titlebar drag regions */
+  .electron-drag {
+    -webkit-app-region: drag;
+  }
+
+  .electron-no-drag {
+    -webkit-app-region: no-drag;
+  }
+
   .bento-card {
     @apply bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-gray-200/60 dark:border-slate-600/60 rounded-2xl p-6 shadow-lg dark:shadow-2xl hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all duration-500 hover:scale-[1.02] hover:bg-white dark:hover:bg-slate-700/90;
   }

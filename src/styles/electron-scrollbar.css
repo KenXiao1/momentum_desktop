@@ -1,0 +1,156 @@
+/* 滚动条样式 - 改进版：滚动时显示，停止后隐藏 */
+
+/* 强制所有滚动条轨道透明 - 最高优先级 */
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece,
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track-piece,
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 确保没有任何默认背景色 */
+html, body, * {
+  scrollbar-track-color: transparent !important;
+}
+
+/* 全局滚动条基础样式 - 默认隐藏 */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none;
+}
+
+/* 滚动条轨道 (底座) - 完全透明 */
+::-webkit-scrollbar-track {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 滚动条滑块 - 默认透明 */
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+/* 专门针对主窗口滚动条 - 默认隐藏 */
+html::-webkit-scrollbar {
+  width: 0px;
+  display: none;
+}
+
+html::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track-piece,
+html::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 5px;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+body::-webkit-scrollbar {
+  width: 0px;
+  display: none;
+}
+
+body::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track-piece,
+body::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 5px;
+  transition: background 0.3s ease, opacity 0.3s ease;
+}
+
+/* 窗口滚动时显示滚动条 */
+html.window-scrolling::-webkit-scrollbar {
+  width: 10px !important;
+  display: block !important;
+}
+
+body.window-scrolling::-webkit-scrollbar {
+  width: 10px !important;
+  display: block !important;
+}
+
+html.window-scrolling::-webkit-scrollbar-thumb,
+body.window-scrolling::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.6);
+}
+
+html.window-scrolling::-webkit-scrollbar-thumb:hover,
+body.window-scrolling::-webkit-scrollbar-thumb:hover {
+  background: rgba(80, 80, 80, 0.8);
+}
+
+/* 其他元素的滚动条 */
+*:not(html):not(body)::-webkit-scrollbar-track,
+*:not(html):not(body)::-webkit-scrollbar-track-piece,
+*:not(html):not(body)::-webkit-scrollbar-corner {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+*:not(html):not(body)::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+*:not(html):not(body):hover::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.4);
+}
+
+*:not(html):not(body)::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.6) !important;
+}
+
+/* Firefox 滚动条样式 */
+html, body {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+html.window-scrolling, body.window-scrolling {
+  scrollbar-color: rgba(120, 120, 120, 0.6) transparent;
+}
+
+/* 其他元素的 Firefox 滚动条 */
+*:not(html):not(body) {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+*:not(html):not(body):hover {
+  scrollbar-color: rgba(150, 150, 150, 0.4) transparent;
+}
+
+/* 内容元素滚动时的样式 */
+.scrolling::-webkit-scrollbar {
+  width: 8px !important;
+  display: block !important;
+}
+
+.scrolling::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.6);
+}
+
+.scrolling {
+  scrollbar-color: rgba(150, 150, 150, 0.6) transparent;
+}
