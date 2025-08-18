@@ -33,7 +33,9 @@ jobs:
         run: npm ci
       
       - name: 运行安全检查
-        run: npm audit
+        run: |
+          npm audit --audit-level high
+          npm run security:check
       
       - name: 运行代码检查
         run: npm run lint
@@ -99,6 +101,7 @@ jobs:
           files: |
             dist_electron/**/*.exe
             dist_electron/**/*.dmg
+            dist_electron/**/*.zip
             dist_electron/**/*.AppImage
             dist_electron/**/*.deb
             dist_electron/**/*.rpm
@@ -108,9 +111,9 @@ jobs:
             ${{ steps.release_notes.outputs.RELEASE_NOTES }}
             
             ### 📦 下载链接
-            - **Windows**: `.exe` 安装包
-            - **macOS**: `.dmg` 镜像文件
-            - **Linux**: `.AppImage` 可执行文件
+            - **Windows x64**: `.exe` 安装包 (NSIS) / `.exe` 便携版
+            - **macOS x64/ARM64**: `.dmg` 镜像文件 / `.zip` 压缩包
+            - **Linux x64**: `.AppImage` 可执行文件 / `.deb` / `.rpm` 安装包
             
             ### 🔄 自动更新
             如果您已经安装了之前的版本，应用会自动检测并提示更新。
@@ -133,5 +136,5 @@ jobs:
     steps:
       - name: 发送构建通知
         run: |
-          echo "✅ Momentum Desktop ${{ github.ref_name }} 构建完成！"
-          echo "📦 发布地址: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+                      echo "✅ Momentum Desktop ${{ github.ref_name }} 构建完成！"
+            echo "📦 发布地址: https://github.com/enshulv/momentum_desktop/releases/tag/${{ github.ref_name }}"

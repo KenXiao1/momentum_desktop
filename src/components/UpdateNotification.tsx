@@ -118,46 +118,46 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({ onDismis
   // 顶部通知栏
   if (isVisible && updateInfo) {
     return (
-      <div className=\"fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg\">
-        <div className=\"flex items-center justify-between px-4 py-3\">
-          <div className=\"flex items-center space-x-3\">
-            <AlertCircle className=\"w-5 h-5 text-yellow-300\" />
-            <div className=\"flex-1\">
-              <p className=\"font-medium\">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-5 h-5 text-yellow-300" />
+            <div className="flex-1">
+              <p className="font-medium">
                 🎉 发现新版本 v{updateInfo.version}！
                 {currentVersion && (
-                  <span className=\"text-blue-100 ml-1\">(当前: v{currentVersion})</span>
+                  <span className="text-blue-100 ml-1">(当前: v{currentVersion})</span>
                 )}
               </p>
               {showDetails && (
-                <p className=\"text-sm text-blue-100 mt-1\">
+                <p className="text-sm text-blue-100 mt-1">
                   {formatReleaseNotes(updateInfo.releaseNotes)}
                 </p>
               )}
             </div>
           </div>
           
-          <div className=\"flex items-center space-x-2\">
+          <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className=\"text-blue-100 hover:text-white transition-colors text-sm underline\"
+              className="text-blue-100 hover:text-white transition-colors text-sm underline"
             >
               {showDetails ? '收起' : '详情'}
             </button>
             
             <button
               onClick={handleDownloadUpdate}
-              className=\"flex items-center space-x-1 bg-white text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md transition-colors font-medium\"
+              className="flex items-center space-x-1 bg-white text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md transition-colors font-medium"
             >
-              <Download className=\"w-4 h-4\" />
+              <Download className="w-4 h-4" />
               <span>更新</span>
             </button>
             
             <button
               onClick={handleDismiss}
-              className=\"text-blue-200 hover:text-white transition-colors\"
+              className="text-blue-200 hover:text-white transition-colors"
             >
-              <X className=\"w-5 h-5\" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

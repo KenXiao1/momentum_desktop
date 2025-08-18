@@ -26,3 +26,18 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# 敏感配置文件
+.mcp.json
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+
+# 构建输出
+dist_electron
+
+# 临时文件
+.tmp
+.cache
