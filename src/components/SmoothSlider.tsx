@@ -120,7 +120,7 @@ export const SmoothSlider: React.FC<SmoothSliderProps> = ({
     
     document.addEventListener('pointermove', handlePointerMove);
     document.addEventListener('pointerup', handlePointerUp);
-  }, [disabled, min, max, step, localValue, onChange]);
+  }, [disabled, min, max, step, localValue, onChange, debounceMs]);
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

@@ -107,7 +107,7 @@ export const MigrationDialog: React.FC<MigrationDialogProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError('下载报告失败');
     }
   };

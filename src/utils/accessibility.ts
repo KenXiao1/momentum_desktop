@@ -513,27 +513,23 @@ export function useAccessibility() {
     manager.announce({ message, priority });
   }, [manager]);
 
-  const setupKeyboardNavigation = React.useCallback((
+  const setupKeyboardNavigation = (
     containerRef: React.RefObject<HTMLElement>,
     options: Omit<KeyboardNavigationOptions, 'container'> = {}
   ) => {
-    React.useEffect(() => {
-      if (!containerRef.current) return;
-      
-      return manager.setupKeyboardNavigation({
-        container: containerRef.current,
-        ...options
-      });
-    }, [containerRef, options]);
-  }, [manager]);
+    if (!containerRef.current) return;
+    
+    return manager.setupKeyboardNavigation({
+      container: containerRef.current,
+      ...options
+    });
+  };
 
-  const createFocusTrap = React.useCallback((containerRef: React.RefObject<HTMLElement>) => {
-    React.useEffect(() => {
-      if (!containerRef.current) return;
-      
-      return manager.createFocusTrap(containerRef.current);
-    }, [containerRef]);
-  }, [manager]);
+  const createFocusTrap = (containerRef: React.RefObject<HTMLElement>) => {
+    if (!containerRef.current) return;
+    
+    return manager.createFocusTrap(containerRef.current);
+  };
 
   return {
     announce,

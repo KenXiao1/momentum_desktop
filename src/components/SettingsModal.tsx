@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Settings, Minimize2, Power, RotateCcw, Database, Folder, FolderOpen, HardDrive, Archive, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { userPreferences } from '../utils/userPreferences';
 import { localFileStorage, LocalStorageSettings } from '../services/LocalFileStorage';
@@ -99,9 +99,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (hasChanges) {
       if (confirm('您有未保存的更改，确定要关闭吗？')) {
         onClose();
@@ -109,7 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } else {
       onClose();
     }
-  };
+  }, [hasChanges, onClose]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -604,7 +604,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <p className="text-gray-500 dark:text-gray-400 text-sm">暂无备份文件</p>
                     ) : (
                       <div className="space-y-2">
-                        {backupFiles.slice(0, 5).map((backup, index) => (
+                        {backupFiles.slice(0, 5).map((backup) => (
                           <div key={backup.fileName} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3">
                             <div className="flex-1">
                               <div className="text-sm font-medium text-gray-900 dark:text-white">

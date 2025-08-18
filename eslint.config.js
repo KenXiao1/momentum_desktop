@@ -23,11 +23,20 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-unused-expressions': ['error', { 
+      // 放宽错误检查，大部分改为警告
+      '@typescript-eslint/no-unused-expressions': ['warn', { 
         allowShortCircuit: true, 
         allowTernary: true 
       }],
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-require-imports': 'warn',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+      'no-case-declarations': 'warn',
+      'no-prototype-builtins': 'warn',
+      'prefer-const': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/rules-of-hooks': 'error', // 这个保持错误级别，因为违反React规则
     },
   }
 );

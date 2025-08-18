@@ -6,7 +6,14 @@ interface TaskCompletionDialogProps {
   chainName: string;
   chainId: string;
   isDurationless?: boolean;
-  storage: any;
+  storage: {
+    getCompletionHistory: () => Promise<Array<{
+      chainId: string;
+      wasSuccessful: boolean;
+      description?: string;
+      completedAt: string;
+    }>>;
+  };
   onComplete: (description: string, notes?: string) => void;
   onCancel: () => void;
 }
@@ -49,7 +56,7 @@ export const TaskCompletionDialog: React.FC<TaskCompletionDialogProps> = ({
       
       loadRecentDescriptions();
     }
-  }, [isOpen, chainId]);
+  }, [isOpen, chainId, storage]);
 
   // Auto-focus description input when dialog opens
   useEffect(() => {

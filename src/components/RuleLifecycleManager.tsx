@@ -3,17 +3,13 @@
  * 提供规则归档、合并、清理和维护功能
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ExceptionRule,
-  ExceptionRuleType,
-  RuleUsageStats,
-  ExceptionRuleError,
-  ExceptionRuleException
+  RuleUsageStats
 } from '../types';
 import { exceptionRuleManager } from '../services/ExceptionRuleManager';
 import { ruleScopeManager } from '../services/RuleScopeManager';
-import { chainDeletionHandler } from '../services/ChainDeletionHandler';
 import { exceptionRuleCache } from '../utils/exceptionRuleCache';
 import {
   Archive,
@@ -21,7 +17,6 @@ import {
   Merge,
   Star,
   Clock,
-  TrendingUp,
   AlertTriangle,
   CheckCircle,
   X,
@@ -69,9 +64,9 @@ export const RuleLifecycleManager: React.FC<RuleLifecycleManagerProps> = ({
     if (isOpen) {
       loadRulesAndAnalyze();
     }
-  }, [isOpen]);
+  }, [isOpen, loadRulesAndAnalyze]);
 
-  const loadRulesAndAnalyze = async () => {
+  const loadRulesAndAnalyze = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -116,9 +111,9 @@ export const RuleLifecycleManager: React.FC<RuleLifecycleManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [analyzeRule]);
 
-  const analyzeRule = async (
+  const analyzeRule = useCallback(async (
     rule: ExceptionRule,
     stats: RuleUsageStats,
     allRules: ExceptionRule[]
@@ -129,7 +124,6 @@ export const RuleLifecycleManager: React.FC<RuleLifecycleManagerProps> = ({
       : Infinity;
     
     const usageCount = rule.usageCount || 0;
-    const usageFrequency = daysSinceCreation > 0 ? usageCount / daysSinceCreation : 0;
 
     // 检查是否为未使用规则
     if (usageCount === 0 && daysSinceCreation > 30) {
@@ -185,7 +179,7 @@ export const RuleLifecycleManager: React.FC<RuleLifecycleManagerProps> = ({
       reason: '正常使用的规则',
       confidence: 0.6
     };
-  };
+  }, []);
 
   const findDuplicateRule = (rule: ExceptionRule, allRules: ExceptionRule[]): ExceptionRule | undefined => {
     const ruleName = rule.name.toLowerCase().trim();
@@ -443,7 +437,7 @@ export const RuleLifecycleManager: React.FC<RuleLifecycleManagerProps> = ({
               <Filter size={16} className="text-gray-500" />
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
+                onChange={(e) => setFilterType(e.target.value as 'all' | 'unused' | 'duplicate' | 'popular')}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="all">所有规则</option>

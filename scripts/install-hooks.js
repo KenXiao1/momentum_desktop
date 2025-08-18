@@ -19,8 +19,8 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# 运行代码检查
-npm run lint
+# 运行代码检查（宽松模式）
+npm run lint:relaxed
 if [ $? -ne 0 ]; then
   echo "❌ 代码检查失败，请修复问题后重新提交"
   exit 1

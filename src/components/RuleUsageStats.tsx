@@ -3,7 +3,7 @@
  * 显示规则使用频率、历史记录和分析数据
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   ExceptionRule, 
   RuleUsageStats as RuleUsageStatsType, 
@@ -16,10 +16,8 @@ import {
   BarChart3, 
   TrendingUp, 
   Clock, 
-  Calendar, 
   Activity,
   PieChart,
-  Filter,
   Download,
   RefreshCw,
   ChevronDown,
@@ -66,7 +64,7 @@ export const RuleUsageStats: React.FC<RuleUsageStatsProps> = ({
     if (selectedRule) {
       loadRuleDetails(selectedRule.id);
     }
-  }, [selectedRule, timeRange]);
+  }, [selectedRule, timeRange, loadRuleDetails]);
 
   // 初始选择规则
   useEffect(() => {
@@ -100,7 +98,7 @@ export const RuleUsageStats: React.FC<RuleUsageStatsProps> = ({
     }
   };
 
-  const loadRuleDetails = async (ruleId: string) => {
+  const loadRuleDetails = useCallback(async (ruleId: string) => {
     try {
       // 加载规则统计
       const stats = await exceptionRuleManager.getRuleStats(ruleId);
@@ -117,7 +115,7 @@ export const RuleUsageStats: React.FC<RuleUsageStatsProps> = ({
     } catch (err) {
       console.error('加载规则详情失败:', err);
     }
-  };
+  }, [timeRange]);
 
   const handleExportStats = async () => {
     try {
@@ -131,7 +129,7 @@ export const RuleUsageStats: React.FC<RuleUsageStatsProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError('导出统计数据失败');
     }
   };

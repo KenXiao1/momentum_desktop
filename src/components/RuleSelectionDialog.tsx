@@ -19,7 +19,7 @@ import {
 import { RuleSearchOptimizer, SearchResult } from '../utils/ruleSearchOptimizer';
 import { ExceptionRuleCache } from '../utils/exceptionRuleCache';
 import { useLayoutStability } from '../utils/LayoutStabilityMonitor';
-import { useAsyncOperation } from '../utils/AsyncOperationManager';
+
 import { VirtualizedRuleList } from './VirtualizedRuleList';
 import { exceptionRuleManager } from '../services/ExceptionRuleManager';
 import { 
@@ -63,7 +63,6 @@ export const RuleSelectionDialog: React.FC<RuleSelectionDialogProps> = ({
   // 工具实例
   const searchOptimizer = useMemo(() => new RuleSearchOptimizer(), []);
   const ruleCache = useMemo(() => new ExceptionRuleCache(), []);
-  const { optimisticUpdate } = useAsyncOperation();
   const { startMonitoring, stopMonitoring } = useLayoutStability(containerRef);
 
   // 初始化和清理
@@ -83,7 +82,7 @@ export const RuleSelectionDialog: React.FC<RuleSelectionDialogProps> = ({
     return () => {
       stopMonitoring();
     };
-  }, [isOpen, sessionContext.chainId]);
+  }, [isOpen, sessionContext.chainId, loadChainRules, startMonitoring, stopMonitoring]);
 
   // 搜索处理
   useEffect(() => {
@@ -134,10 +133,10 @@ export const RuleSelectionDialog: React.FC<RuleSelectionDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [sessionContext.chainId, actionType, ruleCache]);
+  }, [sessionContext.chainId, actionType, ruleCache, fetchChainRulesFromAPI]);
 
   // 从实际存储获取规则
-  const fetchChainRulesFromAPI = async (chainId: string, actionType: string): Promise<ExceptionRule[]> => {
+  const fetchChainRulesFromAPI = useCallback(async (chainId: string, actionType: string): Promise<ExceptionRule[]> => {
     try {
       // 获取所有规则
       const allRules = await exceptionRuleManager.getAllRules();
@@ -172,7 +171,7 @@ export const RuleSelectionDialog: React.FC<RuleSelectionDialogProps> = ({
       // 如果获取失败，返回默认预设规则
       return createDefaultPresetRules(chainId, actionType);
     }
-  };
+  }, []);
 
   // 创建默认预设规则
   const createDefaultPresetRules = async (chainId: string, actionType: string): Promise<ExceptionRule[]> => {
@@ -264,7 +263,7 @@ export const RuleSelectionDialog: React.FC<RuleSelectionDialogProps> = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : '创建规则失败');
     }
-  }, [rules, actionType, sessionContext.chainId, onCreateNewRule, searchOptimizer, ruleCache, loadChainRules]);
+  }, [searchQuery, rules, actionType, sessionContext.chainId, onCreateNewRule, searchOptimizer, loadChainRules]);
 
 
 
