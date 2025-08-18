@@ -20,7 +20,7 @@
           { "type": "test", "release": false },
           { "type": "build", "release": false },
           { "type": "ci", "release": false },
-          { "breaking": true, "release": "major" }
+          { "type": "major", "release": "major" }
         ]
       }
     ],
