@@ -20,6 +20,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: 缓存Electron二进制文件
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+      
       - name: 安装依赖
         run: npm ci
       
@@ -35,20 +45,33 @@ jobs:
           echo "在分支构建中跳过严格的lint检查"
           npm run lint || echo "Lint检查发现问题，但不阻塞分支构建"
       
-      - name: 构建应用
-        run: npm run build
+      - name: 构建应用（优化版本）
+        run: npm run build:optimized
+        env:
+          NODE_ENV: production
       
-      - name: 构建Electron应用
-        run: npm run electron:build
+      - name: 构建Electron应用（按优化顺序）
+        run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
       
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: dist-windows
-          path: dist_electron/
+          path: |
+            out/*.exe
+            out/*.zip
           retention-days: 7
+      
+      - name: 显示构建产物信息
+        run: |
+          echo "=== 构建产物列表 ==="
+          Get-ChildItem -Path "out" -Recurse | Format-Table Name, Length, LastWriteTime
+          echo "=== 文件大小统计 ==="
+          $totalSize = (Get-ChildItem -Path "out" -Recurse | Measure-Object -Property Length -Sum).Sum
+          echo "总大小: $([math]::Round($totalSize/1MB, 2)) MB"
 
   release:
     needs: build
@@ -62,7 +85,13 @@ jobs:
       - name: 下载所有构建产物
         uses: actions/download-artifact@v4
         with:
-          path: dist_electron/
+          path: artifacts/
+      
+      - name: 整理构建产物
+        run: |
+          mkdir -p release_files
+          find artifacts/ -name "*.exe" -o -name "*.zip" | xargs -I {} cp {} release_files/
+          ls -la release_files/
       
       - name: 创建发布说明
         id: release_notes
@@ -79,14 +108,21 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist_electron/**/*.exe
+            release_files/*
           body: |
             ## 🚀 新版本发布
             
             ${{ steps.release_notes.outputs.RELEASE_NOTES }}
             
             ### 📦 下载链接
-            - **Windows x64**: `.exe` 安装包 (NSIS) / `.exe` 便携版
+            - **ZIP压缩包**: 绿色免安装版本（推荐）
+            - **NSIS安装包**: 完整安装程序（x64/x86）
+            - **便携版**: 单文件便携版本
+            
+            ### ⚡ 性能优化
+            - 启用了最大压缩，减少了安装包体积
+            - 优化了代码分割和资源加载
+            - 移除了开发时的调试代码
             
             ### 🔄 自动更新
             如果您已经安装了之前的版本，应用会自动检测并提示更新。

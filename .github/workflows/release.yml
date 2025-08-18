@@ -10,7 +10,7 @@ on:
 jobs:
   release:
     runs-on: windows-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     
     steps:
       - name: 📥 Checkout
@@ -24,6 +24,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      
+      - name: 缓存Electron二进制文件
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
 
       - name: 📦 Install dependencies
         run: npm ci
@@ -31,11 +41,17 @@ jobs:
       - name: 🔍 Lint code
         run: npm run lint
 
+      - name: 构建应用（优化版本）
+        run: npm run build:optimized
+        env:
+          NODE_ENV: production
+      
       - name: 🚀 Semantic Release (自动检测、构建和发布)
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
 
       - name: 📢 Notification
         run: |

@@ -6,6 +6,10 @@ compression: maximum  # 启用最大压缩
 # 启用更强的压缩选项
 asarUnpack: 
   - "**/*.{node,dll}"  # 仅解包必要的原生模块
+# 启用更激进的压缩
+compression: store  # 使用最高压缩级别
+nodeGypRebuild: false  # 禁用原生模块重建
+removePackageScripts: true  # 移除 package.json 中的脚本
 
 # 构建目录配置
 directories:
@@ -40,21 +44,38 @@ files:
   - "!**/node_modules/**/locale/**/*"
   - "!**/node_modules/**/locales/**/*"
   - "!**/node_modules/**/lang/**/*"
+  # 额外排除项以进一步减小体积
+  - "!**/node_modules/**/{*.min.js.map,*.css.map}"
+  - "!**/node_modules/**/man/**/*"
+  - "!**/node_modules/**/docs/**/*"
+  - "!**/node_modules/**/{LICENSE*,LICENCE*,license*,licence*}"
+  - "!**/node_modules/**/{NOTICE*,notice*}"
+  - "!**/node_modules/**/{COPYING*,copying*}"
+  - "!**/node_modules/**/{AUTHORS*,authors*}"
+  - "!**/node_modules/**/{CONTRIBUTORS*,contributors*}"
+  - "!**/node_modules/**/{MAINTAINERS*,maintainers*}"
+  - "!**/node_modules/**/{SPONSORS*,sponsors*}"
+  - "!**/node_modules/**/{FUNDING*,funding*}"
+  - "!**/node_modules/**/{SECURITY*,security*}"
+  - "!**/node_modules/**/{CODE_OF_CONDUCT*,code_of_conduct*}"
+  - "!**/node_modules/**/.*"
+  - "!**/node_modules/**/{*.coffee,*.ts,*.tsx,*.jsx}"
+  - "!**/node_modules/**/tsconfig*.json"
+  - "!**/node_modules/**/tslint*.json"
 
-# Windows 配置
+# Windows 配置 - 调整构建顺序，优先构建zip
 win:
   target:
+    - target: zip  # 首先构建压缩包格式
+      arch:
+        - x64
     - target: nsis
       arch:
         - x64
-        - ia32  # 添加32位支持
     - target: portable
       arch:
         - x64
         - ia32
-    - target: zip  # 添加压缩包格式
-      arch:
-        - x64
   icon: public/app-icon.ico
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}
@@ -76,10 +97,22 @@ nsis:
   artifactName: ${productName}-Setup-${version}.${ext}
   # 启用更强的压缩选项
   useZip: false                               # 不使用zip，使用默认的lzma压缩算法（更高效）
+  # 额外的NSIS压缩优化
+  warningsAsErrors: false
+  unicode: true
+  # 使用最高压缩级别
+  compression: maximum
 
 # 便携版配置  
 portable:
   artifactName: ${productName}-Portable-${version}.${ext}
+  # 便携版压缩优化
+  compression: maximum
+
+# ZIP 压缩包配置
+zip:
+  compression: maximum
+  artifactName: ${productName}-${version}.${ext}
 
 # 暂时只考虑 Windows 平台
 # macOS 和 Linux 支持已注释，未来可根据需要启用
