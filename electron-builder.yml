@@ -42,11 +42,6 @@ win:
   icon: public/app-icon.ico
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}
-  # 添加文件版本信息
-  fileVersion: ${version}
-  productVersion: ${version}
-  legalCopyright: "MIT License © Momentum Team"
-  publisherName: "Momentum Team"
 
 # NSIS 安装包配置
 nsis:
@@ -62,12 +57,6 @@ nsis:
   installerHeaderIcon: public/app-icon.ico
   deleteAppDataOnUninstall: false             # 卸载时不删除用户数据
   artifactName: ${productName}-Setup-${version}.${ext}
-  # 添加更多 NSIS 特定配置
-  language: "2052"                            # 简体中文语言包
-  displayLanguageSelector: true               # 显示语言选择器
-  multiLanguageInstaller: true                # 多语言安装包
-  packElevateHelper: true                     # 打包提升权限助手
-  differentialPackage: true                   # 差分更新包
 
 # 便携版配置  
 portable:
@@ -100,26 +89,7 @@ publish:
   repo: momentum_desktop
   releaseType: release
 
-# 更新配置
-updater:
-  enabled: true
-  
-# 更新日志
-releaseInfo:
-  releaseNotes: |
-    🚀 Momentum Desktop 新版本发布
-    
-    ✨ 主要特性：
-    - 基于链式时延协议的自控力提升
-    - 现代化的用户界面
-    - 系统托盘支持
-    - 本地数据存储
-    
-    📦 安装说明：
-    1. 下载安装包
-    2. 运行安装程序
-    3. 按照向导完成安装
-    
-    🔧 系统要求：
-    - Windows 10 或更高版本
-    - 64位系统
+# 自动更新通过应用内的 update-electron-app 处理
+# 不需要在 electron-builder 配置中设置 updater
+
+# 更新日志将由 GitHub Actions 自动生成
