@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/enshulv/momentum_desktop/compare/v1.2.1...v1.2.2) (2025-08-19)
+
+### 🐛 修复
+
+* 修复自动更新配置，确保生成latest.yml文件 ([1e7035c](https://github.com/enshulv/momentum_desktop/commit/1e7035ca7a99a4c0201112b62d09bcb1881c31b2))
+* 解决合并冲突，修复自动更新配置 ([31d8afc](https://github.com/enshulv/momentum_desktop/commit/31d8afce62375aa5f05a7c14e4edea3c77f64dd4))
+
 ## [1.2.1](https://github.com/enshulv/momentum_desktop/compare/v1.2.0...v1.2.1) (2025-08-19)
 
 ### ⚠ BREAKING CHANGES
