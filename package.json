@@ -27,7 +27,7 @@
     "build:zip": "vite build && electron-builder --win zip --publish never",
     "build:nsis": "vite build && electron-builder --win nsis --publish never",
     "build:portable": "vite build && electron-builder --win portable --publish never",
-    "build:sequential": "npm run clean && npm run build:zip && npm run build:nsis && npm run build:portable",
+    "build:sequential": "npm run clean && npm run build:nsis && npm run build:portable && npm run build:zip",
     "release:win": "vite build && electron-builder --win --publish always",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",

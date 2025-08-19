@@ -79,12 +79,12 @@ win:
     - target: nsis
       arch:
         - x64
-    # - target: portable
-    #   arch:
-    #     - x64
-    # - target: zip
-    #   arch:
-    #     - x64
+    - target: portable
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
   icon: public/app-icon.ico
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}

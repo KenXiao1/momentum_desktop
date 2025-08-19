@@ -65,7 +65,12 @@
         "npmPublish": false
       }
     ],
-
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "npm run build:optimized"
+      }
+    ],
     [
       "@semantic-release/git",
       {

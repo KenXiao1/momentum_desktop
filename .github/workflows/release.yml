@@ -97,13 +97,8 @@ jobs:
         run: |
           echo "🚀 开始构建和发布版本: ${{ needs.check-release.outputs.next-version }}"
           echo "📝 本次发布将包含以下更改类型的提交"
-
-      - name: 构建应用（优化版本）
-        run: npm run build:optimized
-        env:
-          NODE_ENV: production
       
-      - name: 🚀 Semantic Release (构建和发布)
+      - name: 🚀 Semantic Release (更新版本号并构建发布)
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
