@@ -2,12 +2,14 @@
   "branches": [
     {
       "name": "new-feature-branch",
-      "prerelease": false
+      "prerelease": false,
+      "channel": false
     }
   ],
   "repositoryUrl": "https://github.com/enshulv/momentum_desktop.git",
   "ci": false,
   "dryRun": false,
+  "noCi": true,
   "plugins": [
     [
       "@semantic-release/commit-analyzer",

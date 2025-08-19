@@ -9,6 +9,10 @@
   通过"神圣座位原理"、"下必为例原理"和"线性时延原理"帮助用户建立强大的习惯链条
 </p>
 
+## 最新更新
+
+- 优化了自动化发布流程，现在只有在需要发布时才会进行构建
+
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Windows-blue" alt="Platform Support">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
