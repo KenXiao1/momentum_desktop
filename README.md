@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platform Support">
+  <img src="https://img.shields.io/badge/platform-Windows-blue" alt="Platform Support">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
   <img src="https://img.shields.io/badge/version-1.0.0-orange" alt="Version">
 </p>
@@ -32,7 +32,7 @@
 ## 🚀 桌面版新特性
 
 ### ✨ 本地化体验
-- **🖥️ 原生桌面应用** - 基于Electron构建，支持Windows、macOS、Linux
+- **🖥️ 原生桌面应用** - 基于Electron构建，支持Windows
 - **📱 系统托盘** - 支持后台运行，快速访问
 - **⚙️ 窗口控制** - 自定义最小化、最大化、关闭按钮
 
@@ -58,7 +58,7 @@
 ### 📥 预编译版本
 从 [Releases页面](https://github.com/enshulv/momentum_desktop/releases) 下载Windows版本：
 
-- **Windows x64**: `.exe` 安装包 (NSIS) / 便携版
+- **Windows x64**: `.exe` 安装包 (NSIS)
 
 ### 🛠️ 从源码构建
 
@@ -143,8 +143,8 @@ npm run lint
 - ✅ **preload脚本**: 安全的主进程-渲染进程通信
 
 ### 数据安全
-- 🔐 所有用户数据本地加密存储
-- 🛡️ 可选的云端数据端到端加密
+- 🔐 所有用户数据本地存储
+- 🛡️ 可选的云端数据储存
 - 🔍 定期安全漏洞检查和修复
 
 ---
