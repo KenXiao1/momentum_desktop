@@ -1,4 +1,4 @@
-appId: com.momentum.desktop
+﻿appId: com.momentum.desktop
 productName: Momentum Desktop
 copyright: "MIT License"
 asar: true
@@ -137,6 +137,7 @@ publish:
   owner: enshulv
   repo: momentum_desktop
   releaseType: release
+  publishAutoUpdate: true
 
 # 自动更新通过应用内的 update-electron-app 处理
 # 不需要在 electron-builder 配置中设置 updater

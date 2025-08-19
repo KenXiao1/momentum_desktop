@@ -173,10 +173,11 @@ function createTray() {
 
 // electron-updater自动更新配置
 function setupAutoUpdater() {
-  // 开发环境跳过
+  // 开发环境也配置自动更新以便测试
   if (process.env.NODE_ENV === 'development') {
-    console.log('开发环境，跳过自动更新配置');
-    return;
+    console.log('开发环境，配置自动更新用于测试');
+    // 强制启用开发环境更新
+    autoUpdater.forceDevUpdateConfig = true;
   }
 
   // 配置GitHub发布
@@ -188,7 +189,13 @@ function setupAutoUpdater() {
 
   // 监听更新可用事件
   autoUpdater.on('update-available', (info) => {
-    console.log('发现更新:', info.version);
+    console.log('🎉 electron-updater 发现更新:', info.version);
+    console.log('📝 更新信息:', {
+      version: info.version,
+      releaseDate: info.releaseDate,
+      size: info.files?.[0]?.size || 'unknown'
+    });
+    
     updateAvailable = true;
     updateInfo = {
       version: info.version,
@@ -199,11 +206,12 @@ function setupAutoUpdater() {
 
     // 检查是否开启自动更新
     if (autoCheckEnabled) {
-      console.log('自动更新已开启，开始静默下载...');
+      console.log('⚡ 自动更新已开启，开始静默下载...');
       isDownloading = true;
       autoUpdater.downloadUpdate();
       // 不立即通知渲染进程，等下载完成后再通知
     } else {
+      console.log('📢 通知渲染进程有可用更新');
       // 如果没有开启自动更新，立即通知渲染进程
       if (mainWindow && mainWindow.webContents) {
         mainWindow.webContents.send('update-available', updateInfo);
@@ -213,7 +221,8 @@ function setupAutoUpdater() {
 
   // 监听更新不可用事件
   autoUpdater.on('update-not-available', (info) => {
-    console.log('当前已是最新版本');
+    console.log('✅ electron-updater 确认当前已是最新版本');
+    console.log('📱 当前版本:', app.getVersion());
     updateAvailable = false;
   });
 
@@ -226,7 +235,7 @@ function setupAutoUpdater() {
       transferred: progress.transferred
     };
     
-    console.log(`下载进度: ${downloadProgress.percent}%`);
+    console.log(`📥 下载进度: ${downloadProgress.percent}% (${(progress.transferred / 1024 / 1024).toFixed(1)}MB / ${(progress.total / 1024 / 1024).toFixed(1)}MB)`);
     
     // 通知渲染进程下载进度
     if (mainWindow && mainWindow.webContents) {
@@ -236,7 +245,8 @@ function setupAutoUpdater() {
 
   // 监听下载完成
   autoUpdater.on('update-downloaded', (info) => {
-    console.log('更新下载完成');
+    console.log('✅ 更新下载完成!');
+    console.log('📦 下载的版本:', info.version);
     isDownloading = false;
     
     // 下载完成后，通知渲染进程有可用更新（此时才显示横幅）
@@ -250,7 +260,11 @@ function setupAutoUpdater() {
 
   // 监听错误
   autoUpdater.on('error', (error) => {
-    console.error('自动更新错误:', error);
+    console.error('❌ electron-updater 错误:', error);
+    console.error('🔍 错误详情:', {
+      message: error.message,
+      stack: error.stack?.split('\n')[0] || 'No stack trace'
+    });
     isDownloading = false;
     
     // 通知渲染进程错误
@@ -264,14 +278,90 @@ function setupAutoUpdater() {
 async function checkForUpdates() {
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log('开发环境，跳过自动更新检查');
+      console.log('🔧 开发环境，跳过自动更新检查');
       return;
     }
 
-    console.log('检查更新...');
-    await autoUpdater.checkForUpdates();
+    console.log('🔍 开始自动检查更新...');
+    console.log('📱 当前应用版本:', app.getVersion());
+    console.log('🌐 检查仓库: enshulv/momentum_desktop');
+    
+    // 添加超时机制，防止网络请求阻塞
+    const updateCheckPromise = autoUpdater.checkForUpdates();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('更新检查超时')), 15000); // 15秒超时
+    });
+    
+    await Promise.race([updateCheckPromise, timeoutPromise]);
   } catch (error) {
-    console.error('检查更新失败:', error);
+    console.error('❌ 自动检查更新失败:', error);
+    
+    // 如果 electron-updater 失败，尝试 GitHub API 作为备用
+    try {
+      console.log('🔄 尝试使用 GitHub API 作为备用方案...');
+      
+      // 为GitHub API也添加超时机制
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+      
+      const response = await fetch('https://api.github.com/repos/enshulv/momentum_desktop/releases/latest', {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Momentum-Desktop-App'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const releaseData = await response.json();
+        const latestVersion = releaseData.tag_name.replace('v', '');
+        const currentVersion = app.getVersion();
+        
+        console.log(`📊 版本比较: 当前 v${currentVersion} vs 最新 v${latestVersion}`);
+        
+        if (isNewerVersion(latestVersion, currentVersion)) {
+          console.log('✅ GitHub API 发现新版本:', latestVersion);
+          
+          updateAvailable = true;
+          updateInfo = {
+            version: latestVersion,
+            releaseNotes: releaseData.body || '新版本可用',
+            downloadUrl: releaseData.html_url,
+            assets: releaseData.assets || []
+          };
+          
+          // 检查是否开启自动更新
+          if (autoCheckEnabled) {
+            console.log('⚡ 自动检查发现更新，开始静默下载...');
+            isDownloading = true;
+            // 对于GitHub API检测到的更新，我们需要使用electron-updater来下载
+            try {
+              await autoUpdater.downloadUpdate();
+            } catch (error) {
+              console.error('下载更新失败:', error);
+              isDownloading = false;
+              // 下载失败时才通知渲染进程
+              if (mainWindow && mainWindow.webContents) {
+                mainWindow.webContents.send('update-available', updateInfo);
+              }
+            }
+            // 不立即通知渲染进程，等下载完成后再通知
+          } else {
+            console.log('📢 自动更新未开启，通知渲染进程有可用更新');
+            // 如果没有开启自动更新，立即通知渲染进程
+            if (mainWindow && mainWindow.webContents) {
+              mainWindow.webContents.send('update-available', updateInfo);
+            }
+          }
+        } else {
+          console.log('✅ GitHub API 确认当前已是最新版本');
+        }
+      }
+    } catch (apiError) {
+      console.error('❌ GitHub API 备用方案也失败:', apiError);
+      // 静默失败，不影响应用正常运行
+    }
   }
 }
 
@@ -301,10 +391,17 @@ app.on('ready', () => {
   // 配置自动更新
   setupAutoUpdater();
   
-  // 应用启动5秒后检查更新
+  // 应用启动后异步检查更新，不阻塞主进程
   setTimeout(() => {
-    checkForUpdates();
-  }, 5000);
+    // 使用Promise.resolve确保异步执行，避免阻塞
+    Promise.resolve().then(() => {
+      checkForUpdates().catch(error => {
+        console.error('更新检查失败，但不影响应用启动:', error);
+      });
+    });
+  }, 15000); // 延长到15秒，确保应用完全启动
+  
+  console.log('应用启动完成，自动更新配置已启用');
 });
 
 // 所有窗口关闭时的处理（因为有系统托盘，所以不自动退出）
@@ -610,11 +707,135 @@ ipcMain.handle('update:check-status', () => {
 
 // 手动检查更新
 ipcMain.handle('update:check-manual', async () => {
-  await checkForUpdates();
-  return {
-    updateAvailable,
-    updateInfo
-  };
+  try {
+    console.log('开始手动检查更新...');
+    
+    // 首先尝试使用 electron-updater
+    if (process.env.NODE_ENV !== 'development') {
+      console.log('使用 electron-updater 检查更新...');
+      
+      // 创建一个 Promise 来等待更新检查结果
+      const updateCheckPromise = new Promise((resolve) => {
+        let resolved = false;
+        
+        const onUpdateAvailable = (info) => {
+          if (!resolved) {
+            resolved = true;
+            console.log('electron-updater 发现更新:', info.version);
+            console.log('⚡ 手动检查发现更新，开始静默下载...');
+            // 手动检查时总是开始下载，不立即通知渲染进程
+            // 等下载完成后再通知
+            resolve({ updateAvailable: true, updateInfo });
+          }
+        };
+        
+        const onUpdateNotAvailable = () => {
+          if (!resolved) {
+            resolved = true;
+            console.log('electron-updater 未发现更新');
+            resolve({ updateAvailable: false, updateInfo: null });
+          }
+        };
+        
+        const onError = (error) => {
+          if (!resolved) {
+            resolved = true;
+            console.error('electron-updater 检查失败:', error);
+            resolve({ updateAvailable: false, updateInfo: null, error: error.message });
+          }
+        };
+        
+        // 临时监听事件
+        autoUpdater.once('update-available', onUpdateAvailable);
+        autoUpdater.once('update-not-available', onUpdateNotAvailable);
+        autoUpdater.once('error', onError);
+        
+        // 设置超时
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            autoUpdater.removeListener('update-available', onUpdateAvailable);
+            autoUpdater.removeListener('update-not-available', onUpdateNotAvailable);
+            autoUpdater.removeListener('error', onError);
+            console.log('electron-updater 检查超时，尝试备用方案');
+            resolve({ updateAvailable: false, updateInfo: null, timeout: true });
+          }
+        }, 10000); // 10秒超时
+        
+        // 开始检查
+        autoUpdater.checkForUpdates().catch(onError);
+      });
+      
+      const result = await updateCheckPromise;
+      
+      // 如果 electron-updater 成功，直接返回结果
+      if (result.updateAvailable || (!result.timeout && !result.error)) {
+        return result;
+      }
+    }
+    
+    // 备用方案：直接调用 GitHub API
+    console.log('使用 GitHub API 检查更新...');
+    const response = await fetch('https://api.github.com/repos/enshulv/momentum_desktop/releases/latest');
+    
+    if (!response.ok) {
+      throw new Error(`GitHub API 请求失败: ${response.status}`);
+    }
+    
+    const releaseData = await response.json();
+    const latestVersion = releaseData.tag_name.replace('v', '');
+    const currentVersion = app.getVersion();
+    
+    console.log(`当前版本: v${currentVersion}, 最新版本: v${latestVersion}`);
+    
+    const hasUpdate = isNewerVersion(latestVersion, currentVersion);
+    
+    if (hasUpdate) {
+      // 更新全局状态
+      updateAvailable = true;
+      updateInfo = {
+        version: latestVersion,
+        releaseNotes: releaseData.body || '新版本可用',
+        downloadUrl: releaseData.html_url,
+        assets: releaseData.assets || []
+      };
+      
+      console.log('GitHub API 发现更新:', latestVersion);
+      
+      console.log('⚡ 手动检查发现更新，尝试通过electron-updater检查并下载...');
+      // 对于GitHub API检测到的更新，先让electron-updater检查更新
+      try {
+        await autoUpdater.checkForUpdates();
+        // electron-updater会自动处理下载逻辑
+      } catch (error) {
+        console.error('electron-updater检查更新失败:', error);
+        // 如果electron-updater失败，直接通知渲染进程
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('update-available', updateInfo);
+        }
+      }
+    } else {
+      updateAvailable = false;
+      updateInfo = null;
+      console.log('GitHub API 确认当前已是最新版本');
+    }
+    
+    return {
+      updateAvailable: hasUpdate,
+      updateInfo: hasUpdate ? updateInfo : null,
+      source: 'github-api',
+      currentVersion,
+      latestVersion
+    };
+    
+  } catch (error) {
+    console.error('手动检查更新失败:', error);
+    return {
+      updateAvailable: false,
+      updateInfo: null,
+      error: error.message
+    };
+  }
 });
 
 // 开始下载更新

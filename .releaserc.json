@@ -68,7 +68,8 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "npm run build:optimized"
+        "prepareCmd": "npm run build",
+        "publishCmd": "npm run release:win"
       }
     ],
     [
