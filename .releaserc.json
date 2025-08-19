@@ -28,7 +28,10 @@
           { "type": "build", "release": false },
           { "type": "ci", "release": false },
           { "type": "major", "release": "major" }
-        ]
+        ],
+        "parserOpts": {
+          "noteKeywords": []
+        }
       }
     ],
     [
@@ -44,6 +47,9 @@
             { "type": "refactor", "section": "♻️ 重构" },
             { "type": "security", "section": "🔒 安全" }
           ]
+        },
+        "parserOpts": {
+          "noteKeywords": []
         }
       }
     ],
