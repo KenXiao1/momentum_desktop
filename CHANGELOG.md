@@ -1,3 +1,18 @@
+## [1.2.1](https://github.com/enshulv/momentum_desktop/compare/v1.2.0...v1.2.1) (2025-08-19)
+
+### ⚠ BREAKING CHANGES
+
+* **App.tsx**: 修复变量名错误，将 `updatedActiveChains` 更正为 `cleanActiveChains`
+* **storage.ts**: 修复循环引用导致的序列化失败问题，添加数据清理逻辑
+* - 添加循环引用检测和清理机制
+* - 跳过不可序列化的属性（如window、document、element）
+* - 增强错误处理和日志记录
+* - 特殊处理Date对象的序列化
+
+### 🐛 修复
+
+* 修正了一些bug ([41a132c](https://github.com/enshulv/momentum_desktop/commit/41a132c13745e0fc3318fe86d7e745a65882cea5))
+
 ## [1.2.0](https://github.com/enshulv/momentum_desktop/compare/v1.1.0...v1.2.0) (2025-08-19)
 
 ### 🚀 新功能
