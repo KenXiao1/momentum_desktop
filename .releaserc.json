@@ -57,12 +57,7 @@
         "npmPublish": false
       }
     ],
-    [
-      "@semantic-release/exec",
-      {
-        "prepareCmd": "npm run electron:build-only"
-      }
-    ],
+
     [
       "@semantic-release/git",
       {
