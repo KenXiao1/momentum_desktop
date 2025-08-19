@@ -525,12 +525,48 @@ function AppContent() {
   // 辅助函数：安全保存链条数据，保持回收箱完整
   const safelySaveChains = async (updatedActiveChains: Chain[]) => {
     try {
+      console.log('开始安全保存，活跃链数量:', updatedActiveChains.length);
+      
+      // 清理可能的循环引用和不可序列化的对象
+      const cleanActiveChains = updatedActiveChains.map(chain => {
+        const cleanChain: any = {};
+        
+        // 只复制可序列化的属性
+        for (const [key, value] of Object.entries(chain)) {
+          // 跳过可能包含循环引用的属性
+          if (key === 'window' || key === 'document' || key === 'element') {
+            continue;
+          }
+          
+          // 检查值是否可序列化
+          if (value !== null && value !== undefined) {
+            try {
+              // 尝试序列化单个属性来检测循环引用
+              JSON.stringify(value);
+              cleanChain[key] = value;
+            } catch (error) {
+              console.warn(`跳过链条 ${chain.name} 中不可序列化的属性 ${key}:`, error);
+              // 对于Date对象，特殊处理
+              if (value instanceof Date) {
+                cleanChain[key] = value;
+              }
+            }
+          } else {
+            cleanChain[key] = value;
+          }
+        }
+        
+        return cleanChain as Chain;
+      });
+      
       // 获取所有现有链条（包括已删除的）
       const allExistingChains = await storage.getChains();
+      console.log('获取到所有现有链条（包括已删除的）:', allExistingChains.length);
+      
       const deletedChains = allExistingChains.filter(chain => chain.deletedAt != null);
       
       // 合并活跃链条和已删除链条
-      const allUpdatedChains = [...updatedActiveChains, ...deletedChains];
+      const allUpdatedChains = [...cleanActiveChains, ...deletedChains];
       
       // 保存合并后的数据
       await storage.saveChains(allUpdatedChains);

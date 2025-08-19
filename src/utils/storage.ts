@@ -26,7 +26,44 @@ export const storage = {
   },
 
   saveChains: (chains: Chain[]): void => {
-    localStorage.setItem(STORAGE_KEYS.CHAINS, JSON.stringify(chains));
+    // 清理可能的循环引用和不可序列化的对象
+    const cleanChains = chains.map(chain => {
+      const cleanChain: any = {};
+      
+      // 只复制可序列化的属性
+      for (const [key, value] of Object.entries(chain)) {
+        // 跳过可能包含循环引用的属性
+        if (key === 'window' || key === 'document' || key === 'element') {
+          continue;
+        }
+        
+        // 检查值是否可序列化
+        if (value !== null && value !== undefined) {
+          try {
+            // 尝试序列化单个属性来检测循环引用
+            JSON.stringify(value);
+            cleanChain[key] = value;
+          } catch (error) {
+            console.warn(`跳过不可序列化的属性 ${key}:`, error);
+            // 对于Date对象，特殊处理
+            if (value instanceof Date) {
+              cleanChain[key] = value;
+            }
+          }
+        } else {
+          cleanChain[key] = value;
+        }
+      }
+      
+      return cleanChain as Chain;
+    });
+    
+    try {
+      localStorage.setItem(STORAGE_KEYS.CHAINS, JSON.stringify(cleanChains));
+    } catch (error) {
+      console.error('保存链条数据失败:', error);
+      throw error;
+    }
   },
 
   getScheduledSessions: (): ScheduledSession[] => {
