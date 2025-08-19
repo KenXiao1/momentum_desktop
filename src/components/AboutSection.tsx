@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Info, RefreshCw, Settings2, ExternalLink } from 'lucide-react';
 import { userPreferences } from '../utils/userPreferences';
+import { useDialog } from './DialogManager';
 
 interface AboutSectionProps {
   className?: string;
 }
 
 export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) => {
+  const dialog = useDialog();
   const [currentVersion, setCurrentVersion] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(true);
@@ -93,16 +95,28 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
         
         // 如果没有可用更新，提示用户
         if (!result.updateAvailable) {
-          alert('目前已是最新版本！');
+          dialog.showAlert({
+            message: '目前已是最新版本！',
+            type: 'success',
+            title: '检查更新'
+          });
         }
         // 如果有更新，顶部横幅会处理显示
       } else {
         // Web环境模拟检查
-        alert('目前已是最新版本！');
+        dialog.showAlert({
+          message: '目前已是最新版本！',
+          type: 'success',
+          title: '检查更新'
+        });
       }
     } catch (error) {
       console.error('手动检查更新失败:', error);
-      alert('检查更新失败，请稍后重试');
+      dialog.showAlert({
+        message: '检查更新失败，请稍后重试',
+        type: 'error',
+        title: '检查更新失败'
+      });
     } finally {
       setIsChecking(false);
     }

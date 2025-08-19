@@ -187,7 +187,7 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({
 
   return (
     <div 
-      className={`min-h-screen bg-background overflow-x-hidden ${isKeyboardVisible ? 'keyboard-active' : ''}`}
+      className={`bg-background overflow-x-hidden ${isKeyboardVisible ? 'keyboard-active' : ''}`}
       style={{ paddingBottom: isKeyboardVisible ? `${keyboardHeight}px` : '0' }}
     >
       <ResponsiveContainer 

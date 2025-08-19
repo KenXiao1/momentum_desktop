@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Settings, Minimize2, Power, RotateCcw } from 'lucide-react';
 import { userPreferences } from '../utils/userPreferences';
+import { useDialog } from './DialogManager';
 
 export interface WindowSettingsModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ export const WindowSettingsModal: React.FC<WindowSettingsModalProps> = ({
   isOpen,
   onClose
 }) => {
+  const dialog = useDialog();
   const [exitBehavior, setExitBehavior] = useState<'ask' | 'hide' | 'exit'>('ask');
   const [hasChanges, setHasChanges] = useState(false);
   const [originalBehavior, setOriginalBehavior] = useState<'ask' | 'hide' | 'exit'>('ask');
@@ -42,9 +44,13 @@ export const WindowSettingsModal: React.FC<WindowSettingsModalProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (hasChanges) {
-      if (confirm('您有未保存的更改，确定要关闭吗？')) {
+      const confirmed = await dialog.showConfirm({
+        message: '您有未保存的更改，确定要关闭吗？',
+        title: '确认关闭'
+      });
+      if (confirmed) {
         onClose();
       }
     } else {
@@ -59,8 +65,12 @@ export const WindowSettingsModal: React.FC<WindowSettingsModalProps> = ({
     onClose();
   };
 
-  const handleReset = () => {
-    if (confirm('确定要重置为默认设置吗？这将清除所有窗口相关的偏好设置。')) {
+  const handleReset = async () => {
+    const confirmed = await dialog.showConfirm({
+      message: '确定要重置为默认设置吗？这将清除所有窗口相关的偏好设置。',
+      title: '重置设置'
+    });
+    if (confirmed) {
       userPreferences.setExitBehavior('ask');
       setExitBehavior('ask');
       setOriginalBehavior('ask');

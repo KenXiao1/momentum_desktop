@@ -9,6 +9,7 @@ import { ChainDetail } from './components/ChainDetail';
 import { GroupView } from './components/GroupView';
 import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
 import WindowControls from './components/WindowControls'; // 添加这一行导入
+import { DialogProvider, useDialog } from './components/DialogManager';
 import { storage as localStorageUtils } from './utils/storage';
 
 
@@ -29,9 +30,11 @@ import './utils/emergencyFix'; // 紧急修复
 import './utils/fixRuleIds'; // 修复规则ID
 import './utils/directFix'; // 直接修复
 import './utils/ultimateFix'; // 终极修复
+import { UltimateFix } from './utils/ultimateFix';
 
 
-function App() {
+function AppContent() {
+  const dialog = useDialog();
   const [state, setState] = useState<AppState>({
     chains: [],
     scheduledSessions: [],
@@ -74,6 +77,10 @@ function App() {
 
         // 运行迁移脚本
         runMigration();
+        
+        // 设置UltimateFix的dialogProvider
+        const ultimateFix = UltimateFix.getInstance();
+        ultimateFix.setDialogProvider(dialog);
         
         setIsInitialized(true);
       } catch (error) {
@@ -265,12 +272,21 @@ function App() {
             meta={state.rsipMeta}
             onBack={handleBackToDashboard}
             onSaveNodes={async (nodes) => {
-              await storage.saveRSIPNodes(nodes);
+              // 立即更新UI状态，避免阻塞
               setState(prev => ({ ...prev, rsipNodes: nodes }));
+              // 异步保存到存储，不阻塞UI
+              storage.saveRSIPNodes(nodes).catch(error => {
+                console.error('保存RSIP节点失败:', error);
+                // 如果保存失败，可以考虑回滚状态或显示错误提示
+              });
             }}
             onSaveMeta={async (meta) => {
-              await storage.saveRSIPMeta(meta);
+              // 立即更新UI状态，避免阻塞
               setState(prev => ({ ...prev, rsipMeta: meta }));
+              // 异步保存到存储，不阻塞UI
+              storage.saveRSIPMeta(meta).catch(error => {
+                console.error('保存RSIP元数据失败:', error);
+              });
             }}
           />
         );
@@ -608,7 +624,11 @@ function App() {
       console.error('Failed to save chain:', error);
       // 提供更详细的错误信息
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      alert(`保存失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`);
+      dialog.showAlert({
+        message: `保存失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`,
+        type: 'error',
+        title: '保存失败'
+      });
       
       // 如果保存失败，重新加载数据以确保状态一致性
       try {
@@ -670,7 +690,11 @@ function App() {
         }));
       } catch (error) {
         console.error('Failed to schedule chain:', error);
-        alert('预约失败，请重试');
+        dialog.showAlert({
+          message: '预约失败，请重试',
+          type: 'error',
+          title: '预约失败'
+        });
       }
     };
 
@@ -1065,7 +1089,11 @@ function App() {
       console.log(`链条 ${chainId} 已移动到回收箱`);
     } catch (error) {
       console.error('删除链条失败:', error);
-      alert('删除失败，请重试');
+      dialog.showAlert({
+          message: '删除失败，请重试',
+          type: 'error',
+          title: '删除失败'
+        });
     }
   };
 
@@ -1088,7 +1116,11 @@ function App() {
       console.log(`成功恢复 ${chainIds.length} 条链条`);
     } catch (error) {
       console.error('恢复链条失败:', error);
-      alert('恢复失败，请重试');
+      dialog.showAlert({
+          message: '恢复失败，请重试',
+          type: 'error',
+          title: '恢复失败'
+        });
     }
   };
 
@@ -1104,7 +1136,11 @@ function App() {
       console.log(`成功永久删除 ${chainIds.length} 条链条`);
     } catch (error) {
       console.error('永久删除链条失败:', error);
-      alert('永久删除失败，请重试');
+      dialog.showAlert({
+          message: '永久删除失败，请重试',
+          type: 'error',
+          title: '永久删除失败'
+        });
     }
   };
 
@@ -1142,7 +1178,11 @@ function App() {
       console.error('Failed to import chains:', error);
       // 提供更详细的错误信息
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      alert(`导入失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`);
+      dialog.showAlert({
+        message: `导入失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`,
+        type: 'error',
+        title: '导入失败'
+      });
       
       // 如果导入失败，重新加载数据以确保状态一致性
       try {
@@ -1212,7 +1252,11 @@ function App() {
       console.error('Failed to import units:', error);
       // 提供更详细的错误信息
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      alert(`导入失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`);
+      dialog.showAlert({
+        message: `导入失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`,
+        type: 'error',
+        title: '导入失败'
+      });
       
       // 如果导入失败，重新加载数据以确保状态一致性
       try {
@@ -1228,10 +1272,18 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen pt-10">
+    <div className="min-h-screen pt-10 bg-[#FDFDFD] dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <WindowControls />
       {renderContent()}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <DialogProvider>
+      <AppContent />
+    </DialogProvider>
   );
 }
 

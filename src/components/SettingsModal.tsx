@@ -4,6 +4,7 @@ import { userPreferences } from '../utils/userPreferences';
 import { localFileStorage, LocalStorageSettings } from '../services/LocalFileStorage';
 import { dataBackupService, BackupFile } from '../services/DataBackupService';
 import { AboutSection } from './AboutSection';
+import { useDialog } from './DialogManager';
 
 export interface SettingsModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   initialTab = 'window'
 }) => {
+  const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<'window' | 'storage' | 'about'>(initialTab);
   
   // 窗口设置状态
@@ -56,13 +58,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   // 定义 handleClose 函数（必须在使用它的 useEffect 之前）
   const handleClose = useCallback(() => {
     if (hasChanges) {
-      if (confirm('您有未保存的更改，确定要关闭吗？')) {
-        onClose();
-      }
+      dialog.showConfirm({
+        title: '确认关闭',
+        message: '您有未保存的更改，确定要关闭吗？',
+        onConfirm: () => {
+          onClose();
+        }
+      });
     } else {
       onClose();
     }
-  }, [hasChanges, onClose]);
+  }, [hasChanges, onClose, dialog]);
 
   // 加载设置
   useEffect(() => {
@@ -139,13 +145,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       onClose();
     } catch (error) {
       console.error('保存设置失败:', error);
-      alert('保存设置失败，请稍后重试');
+      dialog.showAlert({
+        message: '保存设置失败，请稍后重试',
+        type: 'error',
+        title: '保存失败'
+      });
     }
     setSaving(false);
   };
 
   const handleReset = () => {
-    if (confirm('确定要重置为默认设置吗？这将清除所有相关的偏好设置。')) {
+    dialog.showConfirm({
+      title: '重置设置',
+      message: '确定要重置为默认设置吗？这将清除所有相关的偏好设置。',
+      onConfirm: () => {
       // 重置窗口设置
       setExitBehavior('ask');
       setOriginalExitBehavior('ask');
@@ -161,7 +174,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         };
         setStorageSettings(defaultSettings);
       }
-    }
+      }
+    });
   };
 
   const handleSelectDataPath = async () => {
@@ -191,47 +205,88 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const backupPath = await dataBackupService.createBackup('手动创建的备份');
       if (backupPath) {
-        alert('备份创建成功！');
+        dialog.showAlert({
+          message: '备份创建成功！',
+          type: 'success',
+          title: '备份创建'
+        });
         await loadAllSettings(); // 重新加载备份列表
       } else {
-        alert('备份创建失败，请检查设置并重试');
+        dialog.showAlert({
+          message: '备份创建失败，请检查设置并重试',
+          type: 'error',
+          title: '备份创建失败'
+        });
       }
     } catch (error) {
       console.error('创建备份失败:', error);
-      alert('创建备份时出现错误');
+      dialog.showAlert({
+        message: '创建备份时出现错误',
+        type: 'error',
+        title: '备份创建错误'
+      });
     }
     setIsCreatingBackup(false);
   };
 
   const handleRestoreBackup = async (backupFile: BackupFile) => {
-    if (confirm(`确定要恢复备份"${backupFile.fileName}"吗？这将覆盖当前的所有数据。`)) {
-      try {
-        const success = await dataBackupService.restoreBackup(backupFile.filePath);
-        if (success) {
-          alert('备份恢复成功！应用将重新加载数据。');
-          window.location.reload(); // 重新加载页面以刷新数据
+    dialog.showConfirm({
+      title: '确认恢复备份',
+      message: `确定要恢复备份"${backupFile.fileName}"吗？这将覆盖当前的所有数据。`,
+      onConfirm: async () => {
+        try {
+          const success = await dataBackupService.restoreBackup(backupFile.filePath);
+          if (success) {
+            dialog.showAlert({
+              message: '备份恢复成功！应用将重新加载数据。',
+              type: 'success',
+              title: '备份恢复成功'
+            });
+            window.location.reload(); // 重新加载页面以刷新数据
         } else {
-          alert('备份恢复失败，请稍后重试');
+          dialog.showAlert({
+            message: '备份恢复失败，请稍后重试',
+            type: 'error',
+            title: '备份恢复失败'
+          });
         }
       } catch (error) {
         console.error('恢复备份失败:', error);
-        alert('恢复备份时出现错误');
+        dialog.showAlert({
+          message: '恢复备份时出现错误',
+          type: 'error',
+          title: '备份恢复错误'
+        });
       }
     }
+    });
   };
 
   const handleDeleteBackup = async (backupFile: BackupFile) => {
-    if (confirm(`确定要删除备份"${backupFile.fileName}"吗？此操作无法撤销。`)) {
+    const confirmed = await dialog.showConfirm({
+      title: '确认删除备份',
+      message: `确定要删除备份"${backupFile.fileName}"吗？此操作无法撤销。`
+    });
+    
+    if (confirmed) {
       try {
         const success = await dataBackupService.deleteBackup(backupFile.filePath);
         if (success) {
           await loadAllSettings(); // 重新加载备份列表
         } else {
-          alert('删除备份失败');
+          dialog.showAlert({
+            message: '删除备份失败',
+            type: 'error',
+            title: '删除失败'
+          });
         }
       } catch (error) {
         console.error('删除备份失败:', error);
-        alert('删除备份时出现错误');
+        dialog.showAlert({
+          message: '删除备份时出现错误',
+          type: 'error',
+          title: '删除备份错误'
+        });
       }
     }
   };

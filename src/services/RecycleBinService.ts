@@ -1,14 +1,12 @@
 import { Chain, DeletedChain } from '../types';
-import { storage as localStorageUtils } from '../utils/storage';
-import { supabaseStorage } from '../utils/supabaseStorage';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { dataStorageManager } from './DataStorageManager';
 
 export class RecycleBinService {
   /**
    * 获取当前使用的存储实例
    */
   private static getStorage() {
-    return isSupabaseConfigured ? supabaseStorage : localStorageUtils;
+    return dataStorageManager.getStorage();
   }
 
   /**

@@ -4,8 +4,10 @@ import { X, Minus, Square, Settings } from 'lucide-react';
 import { ExitConfirmDialog } from './ExitConfirmDialog';
 import { SettingsModal } from './SettingsModal';
 import { userPreferences } from '../utils/userPreferences';
+import { useDialog } from './DialogManager';
 
 const WindowControls: React.FC = () => {
+  const dialog = useDialog();
   const [isMaximized, setIsMaximized] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -93,10 +95,14 @@ const WindowControls: React.FC = () => {
         WindowControlService.closeWindow();
       }
     } else {
-      // 在浏览器环境下询问用户
-      if (confirm('确定要关闭应用吗？')) {
-        window.close(); // 可能不会工作，但尝试一下
-      }
+        // 在浏览器环境下询问用户
+        dialog.showConfirm({
+          title: '确认关闭',
+          message: '确定要关闭应用吗？',
+          onConfirm: () => {
+            window.close(); // 可能不会工作，但尝试一下
+          }
+        });
     }
   };
 

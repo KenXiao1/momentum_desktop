@@ -29,8 +29,8 @@ let tray = null;
 function createWindow() {
   // 创建浏览器窗口
   mainWindow = new BrowserWindow({
-    width: 1400,  // 设置默认宽度
-    height: 800,  // 设置默认高度
+    width: 1500,  // 设置默认宽度
+    height: 920,  // 设置默认高度
     frame: false, // 无边框窗口
     icon: path.join(__dirname, '../public/app-icon.ico'), // 窗口图标
     titleBarStyle: 'hiddenInset', // 隐藏标题栏但保留窗口控制按钮

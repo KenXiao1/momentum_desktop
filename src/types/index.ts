@@ -106,6 +106,11 @@ export interface RSIPNode {
   // 可选的计时配置（参考神圣座位预约时长逻辑）
   useTimer?: boolean;
   timerMinutes?: number; // 倒计时分钟数
+  // 定时功能配置
+  useScheduledTimer?: boolean; // 是否启用定时
+  scheduledHour?: number; // 定时小时（0-23）
+  scheduledMinute?: number; // 定时分钟（0-59）
+  lastScheduledAt?: Date; // 上次设置定时的时间（用于6小时禁用逻辑）
 }
 
 export interface RSIPTreeNode extends RSIPNode {

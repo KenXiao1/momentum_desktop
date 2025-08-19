@@ -81,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header: notification + theme + update banner */}
         <div className="flex justify-end items-center space-x-4 mb-6">

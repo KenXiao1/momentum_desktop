@@ -3,6 +3,7 @@ import { DeletedChain } from '../types';
 import { RecycleBinService } from '../services/RecycleBinService';
 import { DeletedChainCard } from './DeletedChainCard';
 import { ConfirmationDialog } from './ConfirmationDialog';
+import { useDialog } from './DialogManager';
 import { Trash2, RotateCcw, X, CheckSquare, Square } from 'lucide-react';
 
 interface RecycleBinModalProps {
@@ -18,6 +19,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({
   onRestore,
   onPermanentDelete,
 }) => {
+  const dialog = useDialog();
   const [deletedChains, setDeletedChains] = useState<DeletedChain[]>([]);
   const [selectedChains, setSelectedChains] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -132,7 +134,11 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({
       await loadDeletedChains();
     } catch (error) {
       console.error('操作失败:', error);
-      alert('操作失败，请重试');
+      dialog.showAlert({
+        message: '操作失败，请重试',
+        type: 'error',
+        title: '操作失败'
+      });
     } finally {
       setIsLoading(false);
       setShowConfirmDialog(null);

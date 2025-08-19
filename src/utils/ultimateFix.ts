@@ -7,12 +7,17 @@ import { ExceptionRuleType } from '../types';
 
 export class UltimateFix {
   private static instance: UltimateFix;
+  private dialogProvider: any = null;
   
   static getInstance(): UltimateFix {
     if (!UltimateFix.instance) {
       UltimateFix.instance = new UltimateFix();
     }
     return UltimateFix.instance;
+  }
+
+  setDialogProvider(dialogProvider: any) {
+    this.dialogProvider = dialogProvider;
   }
 
   async getAllRules() {
@@ -160,13 +165,30 @@ export class UltimateFix {
     
     if (filteredRules.length === 0) {
       console.log('没有可用规则，创建新规则...');
-      const ruleName = prompt(`请输入${actionType === 'pause' ? '暂停' : '提前完成'}规则名称:`);
-      if (ruleName) {
-        const ruleType = actionType === 'pause' 
-          ? ExceptionRuleType.PAUSE_ONLY 
-          : ExceptionRuleType.EARLY_COMPLETION_ONLY;
-        const newRule = await this.createRuleDirectly(ruleName, ruleType);
-        await this.useRuleDirectly(newRule.id, actionType);
+      if (this.dialogProvider) {
+        this.dialogProvider.showPrompt({
+          title: '创建新规则',
+          message: `请输入${actionType === 'pause' ? '暂停' : '提前完成'}规则名称:`,
+          onConfirm: async (ruleName: string) => {
+            if (ruleName) {
+              const ruleType = actionType === 'pause' 
+                ? ExceptionRuleType.PAUSE_ONLY 
+                : ExceptionRuleType.EARLY_COMPLETION_ONLY;
+              const newRule = await this.createRuleDirectly(ruleName, ruleType);
+              await this.useRuleDirectly(newRule.id, actionType);
+            }
+          }
+        });
+      } else {
+        // 降级到原生prompt
+        const ruleName = prompt(`请输入${actionType === 'pause' ? '暂停' : '提前完成'}规则名称:`);
+        if (ruleName) {
+          const ruleType = actionType === 'pause' 
+            ? ExceptionRuleType.PAUSE_ONLY 
+            : ExceptionRuleType.EARLY_COMPLETION_ONLY;
+          const newRule = await this.createRuleDirectly(ruleName, ruleType);
+          await this.useRuleDirectly(newRule.id, actionType);
+        }
       }
     } else if (filteredRules.length === 1) {
       // 只有一个规则，直接使用
@@ -174,11 +196,26 @@ export class UltimateFix {
     } else {
       // 多个规则，让用户选择
       const ruleNames = filteredRules.map((rule, index) => `${index + 1}. ${rule.name}`).join('\n');
-      const choice = prompt(`选择规则 (输入数字):\n${ruleNames}`);
-      const ruleIndex = parseInt(choice || '1') - 1;
-      
-      if (ruleIndex >= 0 && ruleIndex < filteredRules.length) {
-        await this.useRuleDirectly(filteredRules[ruleIndex].id, actionType);
+      if (this.dialogProvider) {
+        this.dialogProvider.showPrompt({
+          title: '选择规则',
+          message: `选择规则 (输入数字):\n${ruleNames}`,
+          defaultValue: '1',
+          onConfirm: async (choice: string) => {
+            const ruleIndex = parseInt(choice || '1') - 1;
+            if (ruleIndex >= 0 && ruleIndex < filteredRules.length) {
+              await this.useRuleDirectly(filteredRules[ruleIndex].id, actionType);
+            }
+          }
+        });
+      } else {
+        // 降级到原生prompt
+        const choice = prompt(`选择规则 (输入数字):\n${ruleNames}`);
+        const ruleIndex = parseInt(choice || '1') - 1;
+        
+        if (ruleIndex >= 0 && ruleIndex < filteredRules.length) {
+          await this.useRuleDirectly(filteredRules[ruleIndex].id, actionType);
+        }
       }
     }
   }

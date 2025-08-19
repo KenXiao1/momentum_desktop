@@ -146,7 +146,7 @@ export const GroupView: React.FC<GroupViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="bg-background p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <header className="flex items-center justify-between mb-12 animate-fade-in">

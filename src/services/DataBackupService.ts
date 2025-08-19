@@ -242,19 +242,33 @@ export class DataBackupService {
     try {
       const stats = await window.electronAPI!.storage.getFileStats(backupPath);
       
-      if (stats?.isFile) {
-        // 删除ZIP文件
-        await window.electronAPI!.storage.deleteFile(backupPath);
-      } else if (stats?.isDirectory) {
-        // 删除备份文件夹及其内容
-        const files = await window.electronAPI!.storage.listDirectory(backupPath);
-        for (const file of files) {
-          await window.electronAPI!.storage.deleteFile(file.path);
-        }
-        // 删除空目录（这里可能需要额外的API）
+      if (!stats) {
+        return true;
       }
       
-      console.log(`备份删除成功: ${backupPath}`);
+      if (stats.isFile) {
+        await window.electronAPI!.storage.deleteFile(backupPath);
+        
+        // 验证文件是否真的被删除
+        const verifyStats = await window.electronAPI!.storage.getFileStats(backupPath);
+        if (verifyStats) {
+          console.error('文件删除失败，文件仍然存在');
+          return false;
+        }
+      } else if (stats.isDirectory) {
+        await window.electronAPI!.storage.removeDirectory(backupPath);
+        
+        // 验证目录是否真的被删除
+        const verifyStats = await window.electronAPI!.storage.getFileStats(backupPath);
+        if (verifyStats) {
+          console.error('目录删除失败，目录仍然存在');
+          return false;
+        }
+      } else {
+        console.error('未知的文件类型');
+        return false;
+      }
+      
       return true;
     } catch (error) {
       console.error('删除备份失败:', error);

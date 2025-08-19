@@ -1,6 +1,7 @@
 import { supabase, getCurrentUser } from '../lib/supabase';
 import { Chain, DeletedChain, ScheduledSession, ActiveSession, CompletionHistory, RSIPNode, RSIPMeta } from '../types';
 import { logger, measurePerformance } from './logger';
+import { chainDeletionHandler } from '../services/ChainDeletionHandler';
 
 interface SchemaVerificationResult {
   hasAllColumns: boolean;
@@ -290,6 +291,17 @@ export class SupabaseStorage {
         console.error('软删除链条失败:', error);
         throw new Error(`软删除链条失败: ${error.message}`);
       }
+
+      // 软删除成功后，处理每个链条的相关规则
+      for (const chain of chainsToDelete) {
+        try {
+          await chainDeletionHandler.moveChainToRecycleBin(chain.id);
+          console.log(`链条 ${chain.id} 的相关规则已移动到回收站`);
+        } catch (ruleError) {
+          console.error(`处理链条 ${chain.id} 的规则失败:`, ruleError);
+          // 规则处理失败不应该阻止软删除操作
+        }
+      }
     } catch (error) {
       // 如果是字段不存在的错误，回退到永久删除
       if (error instanceof Error && (error.message.includes('deleted_at') || error.message.includes('PGRST204'))) {
@@ -327,6 +339,16 @@ export class SupabaseStorage {
         console.error('恢复链条失败:', error);
         throw new Error(`恢复链条失败: ${error.message}`);
       }
+
+      // 恢复链条后，也需要恢复相关的规则
+      for (const chain of chainsToRestore) {
+        try {
+          await chainDeletionHandler.restoreChainFromRecycleBin(chain.id);
+        } catch (error) {
+          console.warn(`恢复链条 ${chain.id} 的规则时出错:`, error);
+          // 不抛出错误，因为链条本身已经恢复成功
+        }
+      }
     } catch (error) {
       if (error instanceof Error && (error.message.includes('deleted_at') || error.message.includes('PGRST204'))) {
         throw new Error('数据库不支持软删除功能，无法恢复已删除的链条');
@@ -355,6 +377,16 @@ export class SupabaseStorage {
     if (error) {
       console.error('永久删除链条失败:', error);
       throw new Error(`永久删除链条失败: ${error.message}`);
+    }
+
+    // 永久删除链条后，也需要永久删除相关的规则
+    for (const chain of chainsToDelete) {
+      try {
+        await chainDeletionHandler.permanentlyDeleteChain(chain.id);
+      } catch (error) {
+        console.warn(`永久删除链条 ${chain.id} 的规则时出错:`, error);
+        // 不抛出错误，因为链条本身已经删除成功
+      }
     }
   }
 

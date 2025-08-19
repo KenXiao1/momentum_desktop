@@ -13,6 +13,7 @@ import {
 import { exceptionRuleManager } from '../services/ExceptionRuleManager';
 import { asyncOperationManager } from '../utils/AsyncOperationManager';
 import RuleItem from './RuleItem';
+import { useDialog } from './DialogManager';
 import { 
   Plus, 
   Search, 
@@ -34,6 +35,7 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
   initialFilter,
   onRuleSelected
 }) => {
+  const dialog = useDialog();
   const [rules, setRules] = useState<ExceptionRule[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -290,14 +292,18 @@ export const ExceptionRuleManager: React.FC<ExceptionRuleManagerProps> = ({
   };
 
   const handleDeleteRule = useCallback(async (rule: ExceptionRule) => {
-    if (!confirm(`确定要删除规则 "${rule.name}" 吗？`)) return;
-    
-    try {
-      await exceptionRuleManager.deleteRule(rule.id);
-      await loadRules();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '删除规则失败');
-    }
+    dialog.showConfirm({
+      title: '确认删除规则',
+      message: `确定要删除规则 "${rule.name}" 吗？`,
+      onConfirm: async () => {
+        try {
+          await exceptionRuleManager.deleteRule(rule.id);
+          await loadRules();
+        } catch (error) {
+          setError(error instanceof Error ? error.message : '删除规则失败');
+        }
+      }
+    });
   }, []);
 
   const handleEditRule = useCallback((rule: ExceptionRule) => {
