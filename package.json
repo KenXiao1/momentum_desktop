@@ -1,7 +1,7 @@
 {
   "name": "momentum-desktop",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.0.0",
   "description": "基于链式时延协议的自控力提升桌面应用",
   "author": "Momentum Team",
   "homepage": "https://github.com/enshulv/momentum_desktop",
@@ -17,7 +17,7 @@
     "lint": "eslint . --max-warnings 5000",
     "lint:strict": "eslint .",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development vite dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron --experimental-specifier-resolution=node .\"",
+    "electron:dev": "concurrently -k \"cross-env NODE_ENV=development vite dev\" \"wait-on http://localhost:8080 && cross-env NODE_ENV=development electron --experimental-specifier-resolution=node .\"",
     "electron:build": "vite build && electron-builder --publish always",
     "electron:build-only": "vite build && electron-builder --publish never",
     "security:check": "node scripts/security-check.js",

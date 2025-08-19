@@ -6,6 +6,8 @@ compression: maximum  # 启用最大压缩
 # 启用更强的压缩选项
 asarUnpack: 
   - "**/*.{node,dll}"  # 仅解包必要的原生模块
+  - "**/node_modules/node-stream-zip/**/*"  # 解包node-stream-zip以避免asar问题
+  - "**/node_modules/archiver/**/*"  # 解包archiver以避免asar问题
 nodeGypRebuild: false  # 禁用原生模块重建
 removePackageScripts: true  # 移除 package.json 中的脚本
 
@@ -19,12 +21,18 @@ files:
   - "dist/**/*"
   - "electron/**/*"
   - "public/app-icon.ico"
+  # 明确包含必要的依赖模块
+  - "node_modules/node-stream-zip/**/*"
+  - "node_modules/archiver/**/*"
+  - "node_modules/@supabase/**/*"
+  - "node_modules/electron-updater/**/*"
   # 排除所有开发文件和文档
   - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme,HISTORY.md,CONTRIBUTORS.md,AUTHORS.md}"
   - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples,docs,doc}"
   - "!**/node_modules/*/{*.d.ts,*.flow,*.map,*.ts}"
   - "!**/node_modules/.bin"
-  - "!**/node_modules/**/*.{md,txt,yml,yaml,json,lock}"
+  # 修改这行，不排除所有json文件，因为某些模块需要package.json
+  - "!**/node_modules/**/*.{md,txt,yml,yaml,lock}"
   - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
   - "!.editorconfig"
   - "!**/._*"
@@ -32,12 +40,12 @@ files:
   - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
   - "!**/{appveyor.yml,.travis.yml,circle.yml}"
   - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
-  # 排除大型开发工具和不必要的文件
+  # 排除大型开发工具和不必要的文件，但保留必要模块
   - "!**/node_modules/**/{benchmark,coverage,demo,demos,samples,sample}"
   - "!**/node_modules/**/*.{spec.js,test.js,test.ts,spec.ts}"
   - "!**/node_modules/**/Makefile*"
   - "!**/node_modules/**/{.eslintrc*,.prettierrc*,.babelrc*,jest.config*,webpack.config*}"
-  - "!**/node_modules/**/src/**/*"
+  # 不排除所有src目录，某些模块可能需要
   # 排除语言文件和多语言包
   - "!**/node_modules/**/locale/**/*"
   - "!**/node_modules/**/locales/**/*"
@@ -60,19 +68,23 @@ files:
   - "!**/node_modules/**/{*.coffee,*.ts,*.tsx,*.jsx}"
   - "!**/node_modules/**/tsconfig*.json"
   - "!**/node_modules/**/tslint*.json"
+  # 但是不排除必要模块的这些文件
+  - "node_modules/node-stream-zip/**/*.js"
+  - "node_modules/archiver/**/*.js"
+  - "node_modules/@supabase/**/*.js"
+  - "node_modules/electron-updater/**/*.js"
 
-# Windows 配置 - 调整构建顺序，优先构建zip
 win:
   target:
     - target: nsis
       arch:
         - x64
-    - target: portable
-      arch:
-        - x64
-    - target: zip
-      arch:
-        - x64
+    # - target: portable
+    #   arch:
+    #     - x64
+    # - target: zip
+    #   arch:
+    #     - x64
   icon: public/app-icon.ico
   requestedExecutionLevel: asInvoker
   artifactName: ${productName}-Setup-${version}.${ext}

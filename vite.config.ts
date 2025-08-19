@@ -99,6 +99,13 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  // 开发服务器配置
+  server: {
+    port: 8080,
+    host: 'localhost',
+    strictPort: false, // 如果端口被占用，自动尝试下一个可用端口
+    open: false, // 不自动打开浏览器
+  },
   // 生产环境优化
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),

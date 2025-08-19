@@ -48,7 +48,7 @@ function createWindow() {
   
   if (isDev) {
     // 开发模式下加载Vite服务器
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:8080');
     mainWindow.webContents.openDevTools();
   } else {
     // 生产模式下加载本地HTML文件
