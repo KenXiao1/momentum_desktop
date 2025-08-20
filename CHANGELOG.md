@@ -1,3 +1,9 @@
+## [1.2.4](https://github.com/enshulv/momentum_desktop/compare/v1.2.3...v1.2.4) (2025-08-20)
+
+### 🐛 修复
+
+* 增强规则管理和导入导出功能 ([2e188df](https://github.com/enshulv/momentum_desktop/commit/2e188dffff5e5e0d59c1fb78d8eb52e8e56442d8))
+
 ## [1.2.3](https://github.com/enshulv/momentum_desktop/compare/v1.2.2...v1.2.3) (2025-08-19)
 
 ### 🐛 修复
