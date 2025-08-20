@@ -1,3 +1,9 @@
+## [1.2.3](https://github.com/enshulv/momentum_desktop/compare/v1.2.2...v1.2.3) (2025-08-19)
+
+### 🐛 修复
+
+* trigger build ([dbbc3c5](https://github.com/enshulv/momentum_desktop/commit/dbbc3c55be823641bc0d4671f0d836b894a73338))
+
 ## [1.2.2](https://github.com/enshulv/momentum_desktop/compare/v1.2.1...v1.2.2) (2025-08-19)
 
 ### 🐛 修复
