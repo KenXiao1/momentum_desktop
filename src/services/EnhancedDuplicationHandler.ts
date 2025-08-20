@@ -42,7 +42,12 @@ export class EnhancedDuplicationHandler {
   /**
    * 实时重复检测（用于用户输入时）
    */
-  async checkDuplicationRealTime(name: string, excludeId?: string): Promise<RealTimeDuplicationCheck> {
+  async checkDuplicationRealTime(
+    name: string, 
+    excludeId?: string, 
+    scope?: 'global' | 'chain', 
+    chainId?: string
+  ): Promise<RealTimeDuplicationCheck> {
     if (!name || name.trim().length === 0) {
       return {
         isChecking: false,
@@ -52,7 +57,7 @@ export class EnhancedDuplicationHandler {
     }
 
     try {
-      const result = await this.checkDuplication(name.trim(), excludeId);
+      const result = await this.checkDuplication(name.trim(), excludeId, scope, chainId);
       
       return {
         isChecking: false,
@@ -77,8 +82,13 @@ export class EnhancedDuplicationHandler {
   /**
    * 完整的重复检查
    */
-  async checkDuplication(name: string, excludeId?: string): Promise<DuplicationCheckResult> {
-    const cacheKey = `${name}_${excludeId || 'new'}`;
+  async checkDuplication(
+    name: string, 
+    excludeId?: string, 
+    scope?: 'global' | 'chain', 
+    chainId?: string
+  ): Promise<DuplicationCheckResult> {
+    const cacheKey = `${name}_${excludeId || 'new'}_${scope || 'global'}_${chainId || 'none'}`;
     
     // 检查缓存
     const cached = this.checkCache.get(cacheKey);
@@ -88,9 +98,22 @@ export class EnhancedDuplicationHandler {
 
     try {
       const allRules = await exceptionRuleStorage.getRules();
-      const activeRules = allRules.filter(rule => 
+      let activeRules = allRules.filter(rule => 
         rule.isActive && (!excludeId || rule.id !== excludeId)
       );
+
+      // 根据作用域过滤规则
+      if (scope === 'chain' && chainId) {
+        // 链专属规则只检查同一链内的其他链专属规则
+        activeRules = activeRules.filter(rule => 
+          rule.scope === 'chain' && rule.chainId === chainId
+        );
+      } else if (scope === 'global') {
+        // 全局规则只检查其他全局规则
+        activeRules = activeRules.filter(rule => 
+          rule.scope === 'global'
+        );
+      }
 
       // 检查完全匹配
       const exactMatches = activeRules.filter(rule => 
@@ -143,13 +166,15 @@ export class EnhancedDuplicationHandler {
     name: string,
     type: ExceptionRuleType,
     description?: string,
-    userChoice?: 'use_existing' | 'modify_name' | 'create_anyway'
+    userChoice?: 'use_existing' | 'modify_name' | 'create_anyway',
+    scope: 'global' | 'chain' = 'global',
+    chainId?: string
   ): Promise<{
     rule: ExceptionRule;
     action: string;
     warnings: string[];
   }> {
-    const checkResult = await this.checkDuplication(name);
+    const checkResult = await this.checkDuplication(name, undefined, scope, chainId);
     
     if (!checkResult.hasConflict) {
       // 没有冲突，直接创建
@@ -157,8 +182,8 @@ export class EnhancedDuplicationHandler {
         name: name.trim(),
         type,
         description: description?.trim(),
-        scope: 'global',
-        chainId: undefined,
+        scope,
+        chainId,
         isArchived: false
       });
       

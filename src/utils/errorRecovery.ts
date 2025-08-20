@@ -123,7 +123,7 @@ export class ErrorRecoveryManager {
         case ExceptionRuleError.RULE_TYPE_MISMATCH:
           return '规则类型不匹配当前操作';
         case ExceptionRuleError.STORAGE_ERROR:
-          return '数据保存失败，请检查存储空间';
+          return '本地数据保存失败，请检查浏览器存储空间';
         case ExceptionRuleError.VALIDATION_ERROR:
           return '输入的数据格式不正确';
         default:
@@ -343,7 +343,7 @@ export class ErrorRecoveryManager {
    */
   private handleStorageError(error: Error) {
     return {
-      userMessage: '存储空间不足，请清理浏览器数据后重试',
+      userMessage: '本地存储空间不足，请清理浏览器数据后重试',
       technicalMessage: error.message,
       recoveryActions: [
         {

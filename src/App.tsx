@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AppState, Chain, ScheduledSession, ActiveSession, CompletionHistory } from './types';
+import { AppState, Chain, ScheduledSession, ActiveSession, CompletionHistory, RSIPNode, RSIPMeta } from './types';
 import { Dashboard } from './components/Dashboard';
 import { RSIPView } from './components/RSIPView';
 import { AuthWrapper } from './components/AuthWrapper';
@@ -11,6 +11,7 @@ import { AuxiliaryJudgment } from './components/AuxiliaryJudgment';
 import WindowControls from './components/WindowControls'; // 添加这一行导入
 import { DialogProvider, useDialog } from './components/DialogManager';
 import { storage as localStorageUtils } from './utils/storage';
+import { UserPreferences, userPreferences } from './utils/userPreferences';
 
 
 import { isSupabaseConfigured } from './lib/supabase';
@@ -309,6 +310,12 @@ function AppContent() {
               onRestoreChains={handleRestoreChains}
               onPermanentDeleteChains={handlePermanentDeleteChains}
               history={state.completionHistory}
+              rsipNodes={state.rsipNodes}
+              rsipMeta={state.rsipMeta}
+              userPreferences={userPreferences.getAll()}
+              onRSIPImport={handleRSIPImport}
+              onRSIPMetaImport={handleRSIPMetaImport}
+              onUserPrefsImport={handleUserPrefsImport}
             />
             {showAuxiliaryJudgment && (
               <AuxiliaryJudgment
@@ -1180,13 +1187,12 @@ function AppContent() {
     }
   };
 
-  const handleImportChains = async (importedChains: Chain[], options?: { history?: CompletionHistory[] }) => {
+  const handleImportChains = async (importedChains: Chain[], importedHistory: CompletionHistory[]) => {
     console.log('开始导入链数据...', importedChains);
     
     try {
       // 合并导入的链条到现有链条中
       const updatedChains = [...state.chains, ...importedChains];
-      const importedHistory = options?.history || [];
       
       console.log('准备保存导入的数据到存储...');
       // Wait for data to be saved before updating UI - 使用安全保存方法
@@ -1214,6 +1220,7 @@ function AppContent() {
       console.error('Failed to import chains:', error);
       // 提供更详细的错误信息
       const errorMessage = error instanceof Error ? error.message : '未知错误';
+
       dialog.showAlert({
         message: `导入失败: ${errorMessage}\n\n请查看控制台了解详细信息，然后重试`,
         type: 'error',
@@ -1230,6 +1237,60 @@ function AppContent() {
       } catch (reloadError) {
         console.error('重新加载数据也失败了:', reloadError);
       }
+    }
+  };
+
+  const handleRSIPImport = async (importedRSIPNodes: RSIPNode[]) => {
+    try {
+      console.log('开始导入 RSIP 节点数据...', importedRSIPNodes);
+      const updatedRSIPNodes = [...state.rsipNodes, ...importedRSIPNodes];
+      await storage.saveRSIPNodes(updatedRSIPNodes);
+      setState(prev => ({
+        ...prev,
+        rsipNodes: updatedRSIPNodes,
+      }));
+      console.log('RSIP 节点导入完成');
+    } catch (error) {
+      console.error('Failed to import RSIP nodes:', error);
+      dialog.showAlert({
+        message: `RSIP 节点导入失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        type: 'error',
+        title: '导入失败'
+      });
+    }
+  };
+
+  const handleRSIPMetaImport = async (importedRSIPMeta: RSIPMeta) => {
+    try {
+      console.log('开始导入 RSIP 元数据...', importedRSIPMeta);
+      await storage.saveRSIPMeta(importedRSIPMeta);
+      setState(prev => ({
+        ...prev,
+        rsipMeta: importedRSIPMeta,
+      }));
+      console.log('RSIP 元数据导入完成');
+    } catch (error) {
+      console.error('Failed to import RSIP meta:', error);
+      dialog.showAlert({
+        message: `RSIP 元数据导入失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        type: 'error',
+        title: '导入失败'
+      });
+    }
+  };
+
+  const handleUserPrefsImport = async (importedUserPrefs: UserPreferences) => {
+    try {
+      console.log('开始导入用户偏好设置...', importedUserPrefs);
+      userPreferences.updatePreferences(importedUserPrefs);
+      console.log('用户偏好设置导入完成');
+    } catch (error) {
+      console.error('Failed to import user preferences:', error);
+      dialog.showAlert({
+        message: `用户偏好设置导入失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        type: 'error',
+        title: '导入失败'
+      });
     }
   };
 

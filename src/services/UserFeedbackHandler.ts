@@ -56,7 +56,7 @@ export class UserFeedbackHandler {
       title: this.getErrorTitle(error.type),
       message: userFriendlyMessage,
       actions: this.convertRecoveryActionsToFeedbackActions(recoveryActions),
-      persistent: true,
+      persistent: false,
       timestamp: new Date()
     };
 
@@ -298,7 +298,7 @@ export class UserFeedbackHandler {
         return `输入验证失败：${error.message}`;
       
       case ExceptionRuleError.STORAGE_ERROR:
-        return '数据保存失败，请检查网络连接或重试';
+        return '本地数据保存失败，请检查浏览器存储空间或重试';
       
       default:
         return error.message || '发生了未知错误';

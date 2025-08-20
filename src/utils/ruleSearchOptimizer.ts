@@ -196,10 +196,14 @@ export class RuleSearchOptimizer {
   }
 
   /**
-   * 清理搜索缓存
+   * 清除搜索缓存和防抖定时器
    */
   clearCache(): void {
     this.searchCache.clear();
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
   }
 
   /**

@@ -87,7 +87,7 @@ export const UserFeedbackDisplay: React.FC<UserFeedbackDisplayProps> = ({ classN
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 space-y-3 max-w-md ${className}`}>
+    <div className={`fixed top-14 right-4 z-[10000] space-y-3 max-w-md ${className}`}>
       {/* 进度指示器 */}
       {progress && (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4">

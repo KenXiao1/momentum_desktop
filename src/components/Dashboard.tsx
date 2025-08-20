@@ -1,9 +1,10 @@
 import React from 'react';
-import { Chain, ScheduledSession, CompletionHistory } from '../types';
+import { Chain, ScheduledSession, CompletionHistory, RSIPNode, RSIPMeta } from '../types';
 import { ChainCard } from './ChainCard';
 import { GroupCard } from './GroupCard';
 import { ThemeToggle } from './ThemeToggle';
 import { ImportExportModal } from './ImportExportModal';
+import { UserPreferences } from '../utils/userPreferences';
 import { buildChainTree, getTopLevelChains } from '../utils/chainTree';
 import { getNextUnitInGroup } from '../utils/chainTree';
 import { Download, TreePine, Trash2 } from 'lucide-react';
@@ -26,10 +27,16 @@ interface DashboardProps {
   onViewChainDetail: (chainId: string) => void;
   onCancelScheduledSession?: (chainId: string) => void;
   onDeleteChain: (chainId: string) => void;
-  onImportChains: (chains: Chain[], options?: { history?: CompletionHistory[] }) => void;
+  onImportChains: (chains: Chain[], completionHistory: CompletionHistory[]) => Promise<void>;
   onRestoreChains?: (chainIds: string[]) => void;
   onPermanentDeleteChains?: (chainIds: string[]) => void;
   history?: CompletionHistory[];
+  rsipNodes?: RSIPNode[];
+  rsipMeta?: RSIPMeta;
+  userPreferences?: UserPreferences;
+  onRSIPImport?: (nodes: RSIPNode[]) => Promise<void>;
+  onRSIPMetaImport?: (meta: RSIPMeta) => Promise<void>;
+  onUserPrefsImport?: (prefs: UserPreferences) => Promise<void>;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -47,6 +54,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onPermanentDeleteChains,
   history,
   onOpenRSIP,
+  rsipNodes = [],
+  rsipMeta,
+  userPreferences,
+  onRSIPImport,
+  onRSIPMetaImport,
+  onUserPrefsImport,
 }) => {
   const [showImportExport, setShowImportExport] = React.useState(false);
   const [showRecycleBin, setShowRecycleBin] = React.useState(false);
@@ -259,8 +272,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {showImportExport && (
         <ImportExportModal
           chains={chains}
-          history={history}
-          onImport={(newChains, options) => onImportChains(newChains, options)}
+          completionHistory={history || []}
+          rsipNodes={rsipNodes}
+          rsipMeta={rsipMeta || { lastAddedAt: new Date() }}
+          userPrefs={userPreferences || {}}
+          onImport={onImportChains}
+          onRSIPImport={onRSIPImport}
+          onRSIPMetaImport={onRSIPMetaImport}
+          onUserPrefsImport={onUserPrefsImport}
           onClose={() => setShowImportExport(false)}
         />
       )}

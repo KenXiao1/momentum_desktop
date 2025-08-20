@@ -25,11 +25,13 @@ export class ExceptionRuleStorageService {
       if (!data) return [];
       
       const rules = JSON.parse(data) as ExceptionRule[];
-      return rules.map(rule => ({
-        ...rule,
-        createdAt: new Date(rule.createdAt),
-        lastUsedAt: rule.lastUsedAt ? new Date(rule.lastUsedAt) : undefined
-      }));
+      return rules
+        .filter(rule => rule.isActive !== false) // 只返回活跃的规则
+        .map(rule => ({
+          ...rule,
+          createdAt: new Date(rule.createdAt),
+          lastUsedAt: rule.lastUsedAt ? new Date(rule.lastUsedAt) : undefined
+        }));
     } catch (error) {
       throw new ExceptionRuleException(
         ExceptionRuleError.STORAGE_ERROR,
@@ -63,23 +65,75 @@ export class ExceptionRuleStorageService {
       // 验证规则数据（创建模式）
       this.validateRule(rule, true);
       
-      // 验证规则名称唯一性（链专属规则只检查同链内的重复，全局规则检查所有规则）
+      // 验证规则名称唯一性
       const existingRules = await this.getRules();
+      console.log('🔍 存储层重复检测:', {
+        新规则: { name: rule.name, chainId: rule.chainId, scope: rule.scope },
+        现有规则数: existingRules.length,
+        现有活跃规则: existingRules.filter(r => r.isActive).map(r => ({
+          name: r.name,
+          chainId: r.chainId,
+          scope: r.scope,
+          isActive: r.isActive
+        }))
+      });
+      
+      // 增强的链条ID一致性检查
       const isDuplicate = existingRules.some(r => {
         if (r.name !== rule.name || !r.isActive) return false;
         
-        // 如果是链专属规则，只检查同链内的重复
-        if (rule.chainId && r.chainId) {
-          return r.chainId === rule.chainId;
+        // 如果新规则是链专属规则
+        if (rule.scope === 'chain' && rule.chainId) {
+          // 严格验证：必须确保chainId完全匹配且都是链专属规则
+          const isSameChain = r.chainId === rule.chainId && r.scope === 'chain';
+          if (isSameChain) {
+            console.log('🚫 检测到同链内重复规则:', {
+              现有规则: { name: r.name, chainId: r.chainId, scope: r.scope },
+              新规则: { name: rule.name, chainId: rule.chainId, scope: rule.scope }
+            });
+          }
+          return isSameChain;
         }
         
-        // 如果是全局规则，检查所有全局规则
-        if (rule.scope === 'global' && r.scope === 'global') {
-          return true;
+        // 如果新规则是全局规则
+        if (rule.scope === 'global') {
+          // 只检查全局规则，不检查链专属规则
+          const isGlobalDuplicate = r.scope === 'global';
+          if (isGlobalDuplicate) {
+            console.log('🚫 检测到全局重复规则:', {
+              现有规则: { name: r.name, scope: r.scope },
+              新规则: { name: rule.name, scope: rule.scope }
+            });
+          }
+          return isGlobalDuplicate;
         }
         
         return false;
       });
+      
+      // 额外的链条ID验证：确保链专属规则必须有有效的chainId
+      if (rule.scope === 'chain') {
+        if (!rule.chainId || rule.chainId.trim() === '') {
+          throw new ExceptionRuleException(
+            ExceptionRuleError.VALIDATION_ERROR,
+            '链专属规则必须指定有效的链条ID'
+          );
+        }
+        
+        // 验证chainId格式（可选：根据实际需求调整）
+        if (rule.chainId.length < 3) {
+          throw new ExceptionRuleException(
+            ExceptionRuleError.VALIDATION_ERROR,
+            '链条ID格式无效，长度不能少于3个字符'
+          );
+        }
+        
+        console.log('✅ 链条ID验证通过:', {
+          规则名称: rule.name,
+          链条ID: rule.chainId,
+          作用域: rule.scope
+        });
+      }
       
       if (isDuplicate) {
         const scopeText = rule.chainId ? '此链中' : '全局';

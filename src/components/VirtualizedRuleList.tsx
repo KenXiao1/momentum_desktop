@@ -6,11 +6,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ExceptionRule } from '../types';
 import { SearchResult } from '../utils/ruleSearchOptimizer';
-import { CheckCircle, Plus, TrendingUp, History } from 'lucide-react';
+import { CheckCircle, Plus, TrendingUp, History, X } from 'lucide-react';
 
 interface VirtualizedRuleListProps {
   rules: SearchResult[];
   onSelect: (rule: ExceptionRule) => void;
+  onDelete?: (rule: ExceptionRule) => void;
   onCreateNew?: (name: string) => void;
   searchQuery?: string;
   isLoading?: boolean;
@@ -28,10 +29,11 @@ interface VirtualItem {
 export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
   rules,
   onSelect,
+  onDelete,
   onCreateNew,
   searchQuery = '',
   isLoading = false,
-  itemHeight = 50, // 修改默认高度
+  itemHeight = 80, // 增加默认高度以提供更好的间距
   containerHeight = 400,
   overscan = 5
 }) => {
@@ -42,7 +44,10 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
 
   // 计算可见项目范围
   const visibleRange = useMemo(() => {
-    const totalItems = rules.length + (onCreateNew && searchQuery ? 1 : 0);
+    // 只有在搜索查询存在且没有找到完全匹配规则时才显示创建新规则选项
+    const hasExactMatch = rules.some(result => result.matchType === 'exact');
+    const shouldShowCreateNew = onCreateNew && searchQuery.trim() && !hasExactMatch;
+    const totalItems = rules.length + (shouldShowCreateNew ? 1 : 0);
     
     if (totalItems === 0) {
       return { start: 0, end: 0, totalItems: 0 };
@@ -58,7 +63,7 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
       end,
       totalItems
     };
-  }, [scrollTop, itemHeight, containerSize.height, rules.length, overscan, onCreateNew, searchQuery]);
+  }, [scrollTop, itemHeight, containerSize.height, rules, overscan, onCreateNew, searchQuery]);
 
   // 计算虚拟项目
   const virtualItems = useMemo((): VirtualItem[] => {
@@ -134,81 +139,72 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
   }, [itemHeight, containerSize.height, totalHeight]);
 
   // 渲染创建新规则项
-  const renderCreateNewItem = useCallback(() => {
-    if (!onCreateNew || !searchQuery) return null;
+  const renderCreateNewItem = useCallback((index: number) => {
+    // 只有在搜索查询存在且没有找到完全匹配的规则时才显示
+    if (!onCreateNew || !searchQuery.trim()) return null;
+    
+    // 检查是否有完全匹配的规则
+    const hasExactMatch = rules.some(result => result.matchType === 'exact');
+    if (hasExactMatch) return null;
 
     return (
-      <div
-        className="absolute w-full"
-        style={{
-          height: itemHeight,
-          top: 0,
-          left: 0
-        }}
+      <button
+        onClick={() => onCreateNew(searchQuery.trim())}
+        className="w-full my-2 flex items-center space-x-3 p-3 rounded-xl bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30 hover:bg-primary-100 dark:hover:bg-primary-500/20 transition-colors text-left"
+        style={{ maxWidth: '100%', boxSizing: 'border-box', margin: '8px 0' }}
       >
-        <button
-          onClick={() => onCreateNew(searchQuery)}
-          className="w-full flex items-center space-x-3 p-4 rounded-xl bg-primary-50 dark:bg-primary-500/10 border border-primary-200 dark:border-primary-500/30 hover:bg-primary-100 dark:hover:bg-primary-500/20 transition-colors text-left"
-          style={{ height: itemHeight }}
-        >
-          <Plus className="text-primary-500 flex-shrink-0" size={20} />
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-primary-700 dark:text-primary-300 truncate">
-              创建新规则: "{searchQuery}"
-            </div>
-            <div className="text-sm text-primary-600 dark:text-primary-400">
-              为当前任务链创建专属规则
-            </div>
+        <Plus className="text-primary-500 flex-shrink-0" size={20} />
+        <div className="flex-1 min-w-0">
+          <div className="font-medium text-primary-700 dark:text-primary-300 truncate">
+            创建新规则: "{searchQuery.trim()}"
           </div>
-        </button>
-      </div>
+          <div className="text-sm text-primary-600 dark:text-primary-400">
+            为当前任务链创建专属规则
+          </div>
+        </div>
+      </button>
     );
-  }, [onCreateNew, searchQuery, itemHeight]);
+  }, [onCreateNew, searchQuery, rules]);
 
   // 渲染规则项
   const renderRuleItem = useCallback((result: SearchResult, index: number) => {
     const rule = result.rule;
-    const actualIndex = onCreateNew && searchQuery ? index - 1 : index;
+    // 检查是否应该显示创建新规则选项
+    const hasExactMatch = rules.some(result => result.matchType === 'exact');
+    const shouldShowCreateNew = onCreateNew && searchQuery.trim() && !hasExactMatch;
+    const actualIndex = shouldShowCreateNew ? index - 1 : index;
     
     if (actualIndex < 0 || actualIndex >= rules.length) return null;
 
     return (
-      <div
-        className="absolute w-full rule-item"
-        style={{
-          height: itemHeight,
-          top: index * itemHeight,
-          left: 0
-        }}
-        data-rule-item
-      >
+      <div className="w-full my-2 flex items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-transparent hover:border-primary-200 dark:hover:border-primary-500/30" style={{ maxWidth: '100%', boxSizing: 'border-box', margin: '8px 0' }}>
         <button
           onClick={() => onSelect(rule)}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 text-left border border-transparent hover:border-primary-200 dark:hover:border-primary-500/30"
-          style={{ height: itemHeight }}
+          className="flex-1 flex items-center text-left min-w-0"
         >
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-gray-900 dark:text-white truncate">
-              {highlightText(rule.name, result.highlightRanges)}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center space-x-4">
-              <span className="flex items-center space-x-1">
-                <TrendingUp size={12} />
-                <span>使用过 {rule.usageCount || 0} 次</span>
-              </span>
-              {rule.lastUsedAt && (
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-900 dark:text-white truncate">
+                {highlightText(rule.name, result.highlightRanges)}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center space-x-4">
                 <span className="flex items-center space-x-1">
-                  <History size={12} />
-                  <span>{formatLastUsed(rule.lastUsedAt)}</span>
+                  <TrendingUp size={12} />
+                  <span>使用过 {rule.usageCount || 0} 次</span>
                 </span>
-              )}
-              {result.matchType !== 'exact' && (
-                <span className="text-primary-500 text-xs">
-                  {getMatchTypeLabel(result.matchType)}
-                </span>
-              )}
+                {rule.lastUsedAt && (
+                  <span className="flex items-center space-x-1">
+                    <History size={12} />
+                    <span>{formatLastUsed(rule.lastUsedAt)}</span>
+                  </span>
+                )}
+                {result.matchType !== 'exact' && (
+                  <span className="text-primary-500 text-xs">
+                    {getMatchTypeLabel(result.matchType)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          </button>
           
           <div className="flex items-center space-x-2 ml-4">
             {/* 使用频率可视化 */}
@@ -217,17 +213,27 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
                 <div
                   key={i}
                   className={`w-1 h-4 rounded-full ${
-                    i < Math.min((rule.usageCount || 0) / 2, 5)
+                    i < Math.min(rule.usageCount || 0, 5)
                       ? 'bg-primary-500'
                       : 'bg-gray-200 dark:bg-gray-600'
                   }`}
                 />
               ))}
             </div>
-            <CheckCircle className="text-gray-400 hover:text-primary-500 transition-colors flex-shrink-0" size={20} />
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(rule);
+                }}
+                className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                title="删除规则"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
-        </button>
-      </div>
+        </div>
     );
   }, [rules, onSelect, itemHeight, onCreateNew, searchQuery]);
 
@@ -286,15 +292,15 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
   const renderEmptyState = () => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="text-gray-500 dark:text-gray-400 mb-4">
-        {searchQuery ? '未找到匹配的规则' : '暂无可用规则'}
+        {searchQuery.trim() ? '未找到匹配的规则' : '暂无可用规则'}
       </div>
-      {searchQuery && onCreateNew && (
+      {searchQuery.trim() && onCreateNew && (
         <button
-          onClick={() => onCreateNew(searchQuery)}
+          onClick={() => onCreateNew(searchQuery.trim())}
           className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           <Plus size={16} />
-          <span>创建 "{searchQuery}"</span>
+          <span>创建 "{searchQuery.trim()}"</span>
         </button>
       )}
     </div>
@@ -332,60 +338,72 @@ export const VirtualizedRuleList: React.FC<VirtualizedRuleListProps> = ({
     >
       <div
         ref={scrollElementRef}
-        className="overflow-auto h-full"
+        className="overflow-auto h-full scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
         onScroll={handleScroll}
         style={{
+          height: `${containerHeight}px`,
+          maxHeight: `${containerHeight}px`,
+          width: '100%',
           overscrollBehavior: 'contain',
           scrollBehavior: 'smooth'
         }}
       >
-        {/* 虚拟滚动容器 */}
-        <div
-          className="relative"
-          style={{ height: totalHeight }}
+        {/* 虚拟滚动容器 - 使用无序列表 */}
+        <ul
+          className="relative list-none p-0 m-0 h-full"
+          style={{
+            minHeight: `${totalHeight}px`,
+            width: '100%',
+            position: 'relative'
+          }}
         >
           {/* 渲染可见项目 */}
           {virtualItems.map((virtualItem) => {
-            const isCreateNewItem = onCreateNew && searchQuery && virtualItem.index === 0;
+            // 只有在搜索查询存在且没有找到完全匹配规则时才显示创建新规则选项
+            const hasExactMatch = rules.some(result => result.matchType === 'exact');
+            const shouldShowCreateNew = onCreateNew && searchQuery.trim() && !hasExactMatch;
+            const isCreateNewItem = shouldShowCreateNew && virtualItem.index === 0;
             
             if (isCreateNewItem) {
               return (
-                <div
+                <li
                   key="create-new"
+                  className="w-full"
                   style={{
-                    position: 'absolute',
-                    top: virtualItem.start,
-                    left: 0,
-                    right: 0,
-                    height: itemHeight
+                    boxSizing: 'border-box',
+                    listStyle: 'none',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    padding: '0 12px'
                   }}
                 >
-                  {renderCreateNewItem()}
-                </div>
+                  {renderCreateNewItem(virtualItem.index)}
+                </li>
               );
             }
 
-            const ruleIndex = onCreateNew && searchQuery ? virtualItem.index - 1 : virtualItem.index;
+            const ruleIndex = shouldShowCreateNew ? virtualItem.index - 1 : virtualItem.index;
             const result = rules[ruleIndex];
             
             if (!result) return null;
 
             return (
-              <div
+              <li
                 key={result.rule.id}
+                className="w-full"
                 style={{
-                  position: 'absolute',
-                  top: virtualItem.start,
-                  left: 0,
-                  right: 0,
-                  height: itemHeight
+                  boxSizing: 'border-box',
+                  listStyle: 'none',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  padding: '0 12px'
                 }}
               >
                 {renderRuleItem(result, virtualItem.index)}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
     </div>
   );

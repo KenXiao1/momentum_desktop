@@ -458,7 +458,7 @@ export const RSIPView: React.FC<RSIPViewProps> = ({ nodes, meta, onBack, onSaveN
     const showSelector = showTimeSelector[node.id];
     
     return (
-      <div key={node.id} className="border border-gray-200 dark:border-slate-700 rounded-2xl p-4 bg-white/60 dark:bg-slate-800/60">
+      <div className="border border-gray-200 dark:border-slate-700 rounded-2xl p-4 bg-white/60 dark:bg-slate-800/60">
         <div className="flex items-start justify-between">
           <div>
             <h4 className="text-lg font-bold font-chinese text-gray-900 dark:text-slate-100">{node.title}</h4>
@@ -708,7 +708,11 @@ export const RSIPView: React.FC<RSIPViewProps> = ({ nodes, meta, onBack, onSaveN
 
         {node.children.length > 0 && (
           <div className="mt-3 pl-4 border-l-2 border-dashed border-gray-200 dark:border-slate-700 space-y-3">
-            {node.children.map(child => renderNode(child))}
+            {node.children.map((child, index) => (
+              <div key={`${child.id}-${index}`}>
+                {renderNode(child)}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -731,7 +735,14 @@ export const RSIPView: React.FC<RSIPViewProps> = ({ nodes, meta, onBack, onSaveN
 
   const flatForSelect = React.useCallback((arr: RSIPTreeNode[]): RSIPTreeNode[] => {
     const res: RSIPTreeNode[] = [];
-    const walk = (n: RSIPTreeNode) => { res.push(n); n.children.forEach(walk); };
+    const seenIds = new Set<string>();
+    const walk = (n: RSIPTreeNode) => {
+      if (!seenIds.has(n.id)) {
+        seenIds.add(n.id);
+        res.push(n);
+      }
+      n.children.forEach(walk);
+    };
     arr.forEach(walk);
     return res;
   }, []);
@@ -785,8 +796,8 @@ export const RSIPView: React.FC<RSIPViewProps> = ({ nodes, meta, onBack, onSaveN
                 className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-gray-900 dark:text-slate-100 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-300 font-chinese"
               >
                 <option value="">（无父节点，建立新根）</option>
-                {flatForSelect(tree).map(n => (
-                  <option key={n.id} value={n.id}>{'— '.repeat(n.depth)}{n.title}</option>
+                {flatForSelect(tree).map((n, index) => (
+                  <option key={`${n.id}-${index}`} value={n.id}>{'— '.repeat(n.depth)}{n.title}</option>
                 ))}
               </select>
             </div>
@@ -911,8 +922,8 @@ export const RSIPView: React.FC<RSIPViewProps> = ({ nodes, meta, onBack, onSaveN
           {tree.length === 0 ? (
             <div className="text-center text-gray-600 dark:text-slate-400 font-chinese">尚无国策，先从上方表单添加一个吧。</div>
           ) : (
-            tree.map(n => (
-              <RSIPNodeComponent key={n.id} node={n} renderNode={renderNode} />
+            tree.map((n, index) => (
+              <RSIPNodeComponent key={`${n.id}-${index}`} node={n} renderNode={renderNode} />
             ))
           )}
         </div>

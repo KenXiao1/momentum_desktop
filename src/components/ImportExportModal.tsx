@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
-import { Chain, CompletionHistory } from '../types';
+import { Chain, CompletionHistory, RSIPNode, RSIPMeta } from '../types';
+import { UserPreferences as UserPrefs } from '../utils/userPreferences';
 import { Download, Upload, X, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface ImportExportModalProps {
   chains: Chain[];
-  history?: CompletionHistory[];
-  onImport: (chains: Chain[], options?: { history?: CompletionHistory[] }) => void;
+  completionHistory: CompletionHistory[];
+  rsipNodes: RSIPNode[];
+  rsipMeta: RSIPMeta;
+  userPrefs: UserPreferences;
+  onImport: (chains: Chain[], completionHistory: CompletionHistory[]) => Promise<void>;
+  onRSIPImport?: (nodes: RSIPNode[]) => Promise<void>;
+  onRSIPMetaImport?: (meta: RSIPMeta) => Promise<void>;
+  onUserPrefsImport?: (prefs: UserPreferences) => Promise<void>;
   onClose: () => void;
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   chains,
-  history,
+  completionHistory,
+  rsipNodes,
+  rsipMeta,
+  userPrefs,
   onImport,
+  onRSIPImport,
+  onRSIPMetaImport,
+  onUserPrefsImport,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'export' | 'import'>(chains.length === 0 ? 'import' : 'export');
@@ -22,17 +35,24 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
   const handleExport = () => {
     const exportData = {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       chains: chains.map(chain => ({
         ...chain,
         createdAt: chain.createdAt.toISOString(),
         lastCompletedAt: chain.lastCompletedAt?.toISOString(),
       })),
-      completionHistory: (history || []).map(h => ({
+      completionHistory: (completionHistory || []).map(h => ({
         ...h,
         completedAt: h.completedAt.toISOString(),
       })),
+      rsipNodes: rsipNodes.map(node => ({
+        ...node,
+        createdAt: node.createdAt.toISOString(),
+        lastScheduledAt: (node as any).lastScheduledAt ? ((node as any).lastScheduledAt instanceof Date ? (node as any).lastScheduledAt.toISOString() : new Date((node as any).lastScheduledAt).toISOString()) : undefined,
+      })),
+      rsipMeta: rsipMeta ? { ...rsipMeta, lastAddedAt: rsipMeta.lastAddedAt?.toISOString() } : undefined,
+      userPreferences: userPrefs,
     };
 
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -48,7 +68,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     try {
       setImportStatus('idle');
       setImportError('');
@@ -119,8 +139,32 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         reasonForFailure: h.reasonForFailure,
       }));
 
+      // 处理 RSIP 节点数据
+      if (parsedData.rsipNodes && Array.isArray(parsedData.rsipNodes) && onRSIPImport) {
+        const processedRSIPNodes = parsedData.rsipNodes.map((node: any) => ({
+          ...node,
+          createdAt: node.createdAt ? new Date(node.createdAt) : new Date(),
+          lastScheduledAt: node.lastScheduledAt ? new Date(node.lastScheduledAt) : null,
+        }));
+        await onRSIPImport(processedRSIPNodes);
+      }
+
+      // 处理 RSIP 元数据
+      if (parsedData.rsipMeta && onRSIPMetaImport) {
+        const processedRSIPMeta = {
+          ...parsedData.rsipMeta,
+          lastAddedAt: parsedData.rsipMeta.lastAddedAt ? new Date(parsedData.rsipMeta.lastAddedAt) : new Date(),
+        };
+        await onRSIPMetaImport(processedRSIPMeta);
+      }
+
+      // 处理用户偏好设置
+      if (parsedData.userPreferences && onUserPrefsImport) {
+        await onUserPrefsImport(parsedData.userPreferences);
+      }
+
       // 将链与历史一起传递，交由上层合并存储
-      onImport(importedChains, { history: importedHistory });
+        await onImport(importedChains, importedHistory);
       setImportStatus('success');
       
       // 3秒后自动关闭
@@ -263,6 +307,14 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                 <div className="flex items-center space-x-2">
                   <CheckCircle size={16} />
                   <span className="font-chinese">例外规则</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle size={16} />
+                  <span className="font-chinese">国策树配置</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle size={16} />
+                  <span className="font-chinese">用户偏好设置</span>
                 </div>
               </div>
             </div>

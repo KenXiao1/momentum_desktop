@@ -150,16 +150,17 @@ export class ExceptionRuleManager {
       console.log('🔧 ExceptionRuleManager.createChainRule 验证参数:', { chainId, name, type, description });
       exceptionRuleStorage.validateRule({ name, type, description }, true);
 
-      // 创建链专属规则
-      const ruleData: Omit<ExceptionRule, 'id' | 'createdAt' | 'usageCount' | 'isActive'> = {
-        name,
-        type,
-        description,
-        chainId,
-        scope: 'chain'
-      };
+      // 使用增强的重复处理机制创建链专属规则
+      const result = await enhancedDuplicationHandler.handleDuplicateCreation(
+        name, 
+        type, 
+        description, 
+        undefined, // userChoice
+        'chain', // scope
+        chainId
+      );
 
-      const rule = await exceptionRuleStorage.createRule(ruleData);
+      const rule = result.rule;
 
       // 验证创建的规则
       const validationResult = await enhancedRuleValidationService.validateRulesIntegrity([rule]);
@@ -187,7 +188,12 @@ export class ExceptionRuleManager {
   /**
    * 实时检查规则名称重复（用于用户输入时）
    */
-  async checkRuleNameRealTime(name: string, excludeId?: string): Promise<{
+  async checkRuleNameRealTime(
+    name: string, 
+    excludeId?: string, 
+    scope?: 'global' | 'chain', 
+    chainId?: string
+  ): Promise<{
     hasConflict: boolean;
     conflictMessage?: string;
     suggestions: Array<{
@@ -198,7 +204,7 @@ export class ExceptionRuleManager {
     }>;
   }> {
     try {
-      const result = await enhancedDuplicationHandler.checkDuplicationRealTime(name, excludeId);
+      const result = await enhancedDuplicationHandler.checkDuplicationRealTime(name, excludeId, scope, chainId);
       
       return {
         hasConflict: result.hasConflict,
@@ -375,10 +381,18 @@ export class ExceptionRuleManager {
     rule: ExceptionRule;
   }> {
     try {
-      // 验证规则ID
+      // 验证规则ID，如果失败则重试
       console.log('🔧 验证规则ID:', ruleId);
-      const validation = await ruleStateManager.validateRuleId(ruleId);
+      let validation = await ruleStateManager.validateRuleId(ruleId);
       console.log('🔧 验证结果:', validation);
+      
+      // 如果验证失败且规则ID看起来是新创建的，等待一段时间后重试
+      if (!validation.isValid && ruleId.includes('_')) {
+        console.log('🔧 规则验证失败，等待后重试...');
+        await new Promise(resolve => setTimeout(resolve, 500)); // 等待500ms
+        validation = await ruleStateManager.validateRuleId(ruleId);
+        console.log('🔧 重试验证结果:', validation);
+      }
       
       if (!validation.isValid) {
         console.error('❌ 规则ID验证失败:', validation);
