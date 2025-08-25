@@ -1,3 +1,9 @@
+## [1.2.5](https://github.com/enshulv/momentum_desktop/compare/v1.2.4...v1.2.5) (2025-08-25)
+
+### 🐛 修复
+
+* 更新应用配置和组件功能，修复了编辑不保存神圣座位的bug，增加了自动更新功能 ([53227fe](https://github.com/enshulv/momentum_desktop/commit/53227fe158ee22c5bf6ccd1ffed6586a42bdd1bc))
+
 ## [1.2.4](https://github.com/enshulv/momentum_desktop/compare/v1.2.3...v1.2.4) (2025-08-20)
 
 ### 🐛 修复
