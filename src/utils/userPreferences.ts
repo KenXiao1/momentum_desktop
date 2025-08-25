@@ -2,6 +2,8 @@
  * 用户偏好设置管理
  */
 
+import { localFileStorage } from '../services/LocalFileStorage';
+
 export interface UserPreferences {
   // 退出行为设置
   exitBehavior: 'ask' | 'hide' | 'exit';
@@ -15,7 +17,7 @@ export interface UserPreferences {
   autoCheckUpdates?: boolean;
 }
 
-const STORAGE_KEY = 'momentum_user_preferences';
+const PREFERENCES_FILE = 'user_preferences.json';
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   exitBehavior: 'ask',
@@ -28,20 +30,37 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 
 export class UserPreferencesManager {
   private preferences: UserPreferences;
+  private isInitialized = false;
 
   constructor() {
-    this.preferences = this.loadPreferences();
+    this.preferences = { ...DEFAULT_PREFERENCES };
+    this.initializeAsync();
+  }
+
+  private async initializeAsync(): Promise<void> {
+    if (this.isInitialized) return;
+    this.preferences = await this.loadPreferences();
+    this.isInitialized = true;
   }
 
   /**
    * 加载用户偏好设置
    */
-  private loadPreferences(): UserPreferences {
+  private async loadPreferences(): Promise<UserPreferences> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return { ...DEFAULT_PREFERENCES, ...parsed };
+      await localFileStorage.initialize();
+      const filePath = `${(await localFileStorage.getSettings()).dataPath}/${PREFERENCES_FILE}`;
+      
+      if (window.electronAPI?.storage) {
+        try {
+          const stored = await window.electronAPI.storage.readFile(filePath);
+          if (stored) {
+            return { ...DEFAULT_PREFERENCES, ...stored };
+          }
+        } catch (error) {
+          // 文件不存在或读取失败，使用默认设置
+          console.log('用户偏好设置文件不存在，使用默认设置');
+        }
       }
     } catch (error) {
       console.error('Failed to load user preferences:', error);
@@ -52,11 +71,18 @@ export class UserPreferencesManager {
   /**
    * 保存用户偏好设置
    */
-  private savePreferences(): void {
+  private async savePreferences(): Promise<void> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.preferences));
+      await localFileStorage.initialize();
+      const filePath = `${(await localFileStorage.getSettings()).dataPath}/${PREFERENCES_FILE}`;
+      
+      if (window.electronAPI?.storage) {
+        await window.electronAPI.storage.writeFile(filePath, this.preferences);
+        console.log('用户偏好设置已保存到文件:', filePath);
+      }
     } catch (error) {
       console.error('Failed to save user preferences:', error);
+      throw error;
     }
   }
 
@@ -77,9 +103,9 @@ export class UserPreferencesManager {
   /**
    * 设置退出行为
    */
-  setExitBehavior(behavior: 'ask' | 'hide' | 'exit'): void {
+  async setExitBehavior(behavior: 'ask' | 'hide' | 'exit'): Promise<void> {
     this.preferences.exitBehavior = behavior;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
@@ -92,9 +118,9 @@ export class UserPreferencesManager {
   /**
    * 设置主题
    */
-  setTheme(theme: 'light' | 'dark' | 'system'): void {
+  async setTheme(theme: 'light' | 'dark' | 'system'): Promise<void> {
     this.preferences.theme = theme;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
@@ -107,9 +133,9 @@ export class UserPreferencesManager {
   /**
    * 设置通知
    */
-  setNotifications(enabled: boolean): void {
+  async setNotifications(enabled: boolean): Promise<void> {
     this.preferences.notifications = enabled;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
@@ -122,9 +148,9 @@ export class UserPreferencesManager {
   /**
    * 设置最小化到托盘
    */
-  setMinimizeToTray(enabled: boolean): void {
+  async setMinimizeToTray(enabled: boolean): Promise<void> {
     this.preferences.minimizeToTray = enabled;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
@@ -137,9 +163,9 @@ export class UserPreferencesManager {
   /**
    * 设置开机启动
    */
-  setStartWithSystem(enabled: boolean): void {
+  async setStartWithSystem(enabled: boolean): Promise<void> {
     this.preferences.startWithSystem = enabled;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
@@ -152,25 +178,25 @@ export class UserPreferencesManager {
   /**
    * 设置是否自动检查更新
    */
-  setAutoCheckUpdates(enabled: boolean): void {
+  async setAutoCheckUpdates(enabled: boolean): Promise<void> {
     this.preferences.autoCheckUpdates = enabled;
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
    * 重置所有偏好设置
    */
-  reset(): void {
+  async reset(): Promise<void> {
     this.preferences = { ...DEFAULT_PREFERENCES };
-    this.savePreferences();
+    await this.savePreferences();
   }
 
   /**
    * 更新多个偏好设置
    */
-  updatePreferences(updates: Partial<UserPreferences>): void {
+  async updatePreferences(updates: Partial<UserPreferences>): Promise<void> {
     this.preferences = { ...this.preferences, ...updates };
-    this.savePreferences();
+    await this.savePreferences();
   }
 }
 

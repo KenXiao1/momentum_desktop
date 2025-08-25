@@ -5,13 +5,23 @@ import { useDialog } from './DialogManager';
 
 interface AboutSectionProps {
   className?: string;
+  autoCheckUpdates?: boolean;
+  onAutoCheckUpdatesChange?: (enabled: boolean) => void;
 }
 
-export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) => {
+export const AboutSection: React.FC<AboutSectionProps> = ({ 
+  className = '', 
+  autoCheckUpdates: externalAutoCheckUpdates,
+  onAutoCheckUpdatesChange 
+}) => {
   const dialog = useDialog();
   const [currentVersion, setCurrentVersion] = useState('');
   const [isChecking, setIsChecking] = useState(false);
-  const [autoCheckUpdates, setAutoCheckUpdates] = useState(true);
+  const [internalAutoCheckUpdates, setInternalAutoCheckUpdates] = useState(true);
+  
+  // 使用外部传入的状态或内部状态
+  const autoCheckUpdates = externalAutoCheckUpdates !== undefined ? externalAutoCheckUpdates : internalAutoCheckUpdates;
+  const setAutoCheckUpdates = onAutoCheckUpdatesChange || setInternalAutoCheckUpdates;
   const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<{
     isDownloading: boolean;
@@ -25,13 +35,17 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
     // 获取当前版本
     getCurrentVersion();
     
-    // 获取自动更新偏好并同步到主进程
-    const autoCheckEnabled = userPreferences.getAutoCheckUpdates();
-    setAutoCheckUpdates(autoCheckEnabled);
+    // 获取自动更新偏好并同步到主进程（仅在没有外部状态管理时）
+    let currentAutoCheckValue = autoCheckUpdates;
+    if (externalAutoCheckUpdates === undefined) {
+      const autoCheckEnabled = userPreferences.getAutoCheckUpdates();
+      setInternalAutoCheckUpdates(autoCheckEnabled);
+      currentAutoCheckValue = autoCheckEnabled;
+    }
     
     // 同步设置到主进程
     if (window.electronAPI?.update?.setAutoCheck) {
-      window.electronAPI.update.setAutoCheck(autoCheckEnabled);
+      window.electronAPI.update.setAutoCheck(currentAutoCheckValue);
     }
     
     // 监听下载进度
@@ -124,7 +138,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ className = '' }) =>
 
   const handleAutoUpdateToggle = async (enabled: boolean) => {
     setAutoCheckUpdates(enabled);
-    userPreferences.setAutoCheckUpdates(enabled);
+    await userPreferences.setAutoCheckUpdates(enabled);
     
     // 通知主进程自动检查设置的变化
     if (window.electronAPI?.update?.setAutoCheck) {

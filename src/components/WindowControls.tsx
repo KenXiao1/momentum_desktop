@@ -106,12 +106,12 @@ const WindowControls: React.FC = () => {
     }
   };
 
-  const handleExitConfirm = (action: 'hide' | 'exit', rememberChoice?: boolean) => {
+  const handleExitConfirm = async (action: 'hide' | 'exit', rememberChoice?: boolean) => {
     setShowExitDialog(false);
     
     if (rememberChoice) {
       // 保存用户选择
-      userPreferences.setExitBehavior(action);
+      await userPreferences.setExitBehavior(action);
     }
     
     if (action === 'hide') {

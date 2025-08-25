@@ -50,7 +50,9 @@ try {
       download: () => ipcRenderer.invoke('update:download'),
       getDownloadStatus: () => ipcRenderer.invoke('update:get-download-status'),
       install: () => ipcRenderer.invoke('update:install'),
+      getAutoCheck: () => ipcRenderer.invoke('update:get-auto-check'),
       setAutoCheck: (enabled) => ipcRenderer.invoke('update:set-auto-check', enabled),
+      initAutoCheck: (enabled) => ipcRenderer.invoke('update:init-auto-check', enabled),
     },
     app: {
       getVersion: () => ipcRenderer.invoke('app:get-version'),

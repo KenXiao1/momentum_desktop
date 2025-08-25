@@ -179,6 +179,23 @@ export const ChainEditor: React.FC<ChainEditorProps> = ({
     onCancel
   });
 
+  // 编辑模式下的初始化逻辑
+  useEffect(() => {
+    if (isEditing && chain) {
+      // 处理自定义触发器的初始化
+      if (chain.trigger && !TRIGGER_TEMPLATES.some(template => template.text === chain.trigger)) {
+        setTrigger('自定义触发器');
+        setCustomTrigger(chain.trigger);
+      }
+      
+      // 处理自定义辅助信号的初始化
+      if (chain.auxiliarySignal && !AUXILIARY_SIGNAL_TEMPLATES.some(template => template.text === chain.auxiliarySignal)) {
+        setAuxiliarySignal('自定义信号');
+        setCustomAuxiliarySignal(chain.auxiliarySignal);
+      }
+    }
+  }, [isEditing, chain]);
+
   // 启动性能监控
   useEffect(() => {
     performance.startMonitoring();

@@ -24,6 +24,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [exitBehavior, setExitBehavior] = useState<'ask' | 'hide' | 'exit'>('ask');
   const [originalExitBehavior, setOriginalExitBehavior] = useState<'ask' | 'hide' | 'exit'>('ask');
   
+  // 自动更新设置状态
+  const [autoCheckUpdates, setAutoCheckUpdates] = useState(true);
+  const [originalAutoCheckUpdates, setOriginalAutoCheckUpdates] = useState(true);
+  
   // 存储设置状态
   const [storageSettings, setStorageSettings] = useState<LocalStorageSettings>({
     dataPath: '',
@@ -52,19 +56,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // 是否有变化
   const hasWindowChanges = exitBehavior !== originalExitBehavior;
-  const hasStorageChanges = originalStorageSettings && JSON.stringify(storageSettings) !== JSON.stringify(originalStorageSettings);
-  const hasChanges = hasWindowChanges || hasStorageChanges;
+  const hasAutoUpdateChanges = autoCheckUpdates !== originalAutoCheckUpdates;
+  const hasStorageChanges = originalStorageSettings && (
+    storageSettings.dataPath !== originalStorageSettings.dataPath ||
+    storageSettings.backupPath !== originalStorageSettings.backupPath ||
+    storageSettings.backupInterval !== originalStorageSettings.backupInterval ||
+    storageSettings.maxBackupCount !== originalStorageSettings.maxBackupCount ||
+    storageSettings.autoBackup !== originalStorageSettings.autoBackup
+  );
+  const hasChanges = hasWindowChanges || hasAutoUpdateChanges || hasStorageChanges;
 
   // 定义 handleClose 函数（必须在使用它的 useEffect 之前）
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback(async () => {
     if (hasChanges) {
-      dialog.showConfirm({
+      const confirmed = await dialog.showConfirm({
         title: '确认关闭',
-        message: '您有未保存的更改，确定要关闭吗？',
-        onConfirm: () => {
-          onClose();
-        }
+        message: '您有未保存的更改，确定要关闭吗？'
       });
+      if (confirmed) {
+        onClose();
+      }
     } else {
       onClose();
     }
@@ -84,6 +95,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       const currentBehavior = userPreferences.getExitBehavior();
       setExitBehavior(currentBehavior);
       setOriginalExitBehavior(currentBehavior);
+      
+      // 加载自动更新设置
+      const currentAutoCheck = userPreferences.getAutoCheckUpdates();
+      setAutoCheckUpdates(currentAutoCheck);
+      setOriginalAutoCheckUpdates(currentAutoCheck);
 
       // 加载存储设置（仅在Electron环境中）
       if (window.electronAPI?.storage) {
@@ -120,11 +136,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleSave = async () => {
     setSaving(true);
+    console.log('开始保存设置...');
     try {
       // 保存窗口设置
       if (hasWindowChanges) {
-        userPreferences.setExitBehavior(exitBehavior);
+        console.log('保存窗口设置:', exitBehavior);
+        await userPreferences.setExitBehavior(exitBehavior);
         setOriginalExitBehavior(exitBehavior);
+        console.log('窗口设置保存完成');
+      }
+
+      // 保存自动更新设置
+      if (hasAutoUpdateChanges) {
+        console.log('保存自动更新设置:', autoCheckUpdates);
+        await userPreferences.setAutoCheckUpdates(autoCheckUpdates);
+        // 通知主进程自动检查设置的变化
+        if (window.electronAPI?.update?.setAutoCheck) {
+          await window.electronAPI.update.setAutoCheck(autoCheckUpdates);
+        }
+        setOriginalAutoCheckUpdates(autoCheckUpdates);
+        console.log('自动更新设置保存完成');
       }
 
       // 保存存储设置
@@ -138,8 +169,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           dataBackupService.stopAutoBackup();
         }
         
-        setOriginalStorageSettings(storageSettings);
-        await loadAllSettings(); // 重新加载数据
+        // 更新原始设置状态，确保保存的值被正确记录
+        setOriginalStorageSettings({ ...storageSettings });
+        
+        // 重新加载备份状态和统计信息，但不重新加载设置本身
+        try {
+          const status = await dataBackupService.getBackupStatus();
+          setBackupStatus(status);
+          
+          const files = await dataBackupService.getBackupList();
+          setBackupFiles(files);
+          
+          const stats = await localFileStorage.getStorageStats();
+          setStorageStats(stats);
+        } catch (error) {
+          console.warn('重新加载备份信息失败:', error);
+        }
       }
 
       onClose();
@@ -158,11 +203,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     dialog.showConfirm({
       title: '重置设置',
       message: '确定要重置为默认设置吗？这将清除所有相关的偏好设置。',
-      onConfirm: () => {
+      onConfirm: async () => {
       // 重置窗口设置
       setExitBehavior('ask');
       setOriginalExitBehavior('ask');
-      userPreferences.setExitBehavior('ask');
+      
+      // 重置自动更新设置
+      setAutoCheckUpdates(true);
+      setOriginalAutoCheckUpdates(true);
+      await userPreferences.setExitBehavior('ask');
       
       // 重置存储设置（如果在Electron环境中）
       if (window.electronAPI?.storage && originalStorageSettings) {
@@ -334,10 +383,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
+        onDoubleClick={(e) => e.stopPropagation()}
       />
       
       {/* 对话框容器 */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-[800px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col">
+      <div 
+        className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-[800px] max-w-[95vw] max-h-[95vh] overflow-hidden flex flex-col"
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
         {/* 标题栏 */}
         <div className="flex items-center justify-between p-6 pb-0 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -702,7 +755,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {/* 关于标签页 */}
             {activeTab === 'about' && (
-              <AboutSection />
+              <AboutSection 
+                autoCheckUpdates={autoCheckUpdates}
+                onAutoCheckUpdatesChange={setAutoCheckUpdates}
+              />
             )}
 
             {/* 如果不在Electron环境中显示存储设置不可用 */}

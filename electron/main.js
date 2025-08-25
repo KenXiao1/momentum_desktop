@@ -20,7 +20,7 @@ let updateAvailable = false;
 let updateInfo = null;
 let downloadProgress = { percent: 0, bytesPerSecond: 0, total: 0, transferred: 0 };
 let isDownloading = false;
-let autoCheckEnabled = true; // 默认开启自动检查
+let autoCheckEnabled = false; // 默认关闭自动检查，等待渲染进程初始化设置
 
 // 保持对主窗口和系统托盘的全局引用
 let mainWindow;
@@ -178,6 +178,9 @@ function setupAutoUpdater() {
     console.log('开发环境，配置自动更新用于测试');
     // 强制启用开发环境更新
     autoUpdater.forceDevUpdateConfig = true;
+    // 设置开发环境配置文件路径
+    const devConfigPath = path.join(__dirname, '..', 'dev-app-update.yml');
+    console.log('开发环境配置文件路径:', devConfigPath);
   }
 
   // 配置GitHub发布
@@ -204,19 +207,17 @@ function setupAutoUpdater() {
       assets: []
     };
 
-    // 检查是否开启自动更新
-    if (autoCheckEnabled) {
-      console.log('⚡ 自动更新已开启，开始静默下载...');
-      isDownloading = true;
-      autoUpdater.downloadUpdate();
-      // 不立即通知渲染进程，等下载完成后再通知
-    } else {
-      console.log('📢 通知渲染进程有可用更新');
-      // 如果没有开启自动更新，立即通知渲染进程
-      if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('update-available', updateInfo);
+    // 检查用户的自动更新设置
+      if (autoCheckEnabled) {
+        console.log('⚡ 自动更新已开启，开始静默下载...');
+        isDownloading = true;
+        autoUpdater.downloadUpdate();
+        // 通知渲染进程显示下载进度
+        if (mainWindow && mainWindow.webContents) {
+          mainWindow.webContents.send('update-available', updateInfo);
+        }
       }
-    }
+      // 当自动更新关闭时，不通知渲染进程
   });
 
   // 监听更新不可用事件
@@ -249,12 +250,18 @@ function setupAutoUpdater() {
     console.log('📦 下载的版本:', info.version);
     isDownloading = false;
     
-    // 下载完成后，通知渲染进程有可用更新（此时才显示横幅）
+    // 更新updateInfo为下载完成的信息
+    updateInfo = {
+      version: info.version,
+      releaseNotes: info.releaseNotes || '',
+      downloadUrl: '',
+      assets: []
+    };
+    
+    // 下载完成后，发送update-downloaded事件
     if (mainWindow && mainWindow.webContents) {
-      console.log('下载完成，现在显示更新横幅');
+      console.log('下载完成，通知渲染进程更新已下载，版本:', info.version);
       mainWindow.webContents.send('update-downloaded', updateInfo);
-      // 如果之前因为自动下载而没有显示横幅，现在显示
-      mainWindow.webContents.send('update-available', updateInfo);
     }
   });
 
@@ -278,8 +285,8 @@ function setupAutoUpdater() {
 async function checkForUpdates() {
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔧 开发环境，跳过自动更新检查');
-      return;
+      console.log('🔧 开发环境，启用更新检查用于测试');
+      // 开发环境也允许检查更新，但使用特殊配置
     }
 
     console.log('🔍 开始自动检查更新...');
@@ -331,7 +338,7 @@ async function checkForUpdates() {
             assets: releaseData.assets || []
           };
           
-          // 检查是否开启自动更新
+          // 检查用户的自动更新设置
           if (autoCheckEnabled) {
             console.log('⚡ 自动检查发现更新，开始静默下载...');
             isDownloading = true;
@@ -341,19 +348,13 @@ async function checkForUpdates() {
             } catch (error) {
               console.error('下载更新失败:', error);
               isDownloading = false;
-              // 下载失败时才通知渲染进程
-              if (mainWindow && mainWindow.webContents) {
-                mainWindow.webContents.send('update-available', updateInfo);
-              }
             }
-            // 不立即通知渲染进程，等下载完成后再通知
-          } else {
-            console.log('📢 自动更新未开启，通知渲染进程有可用更新');
-            // 如果没有开启自动更新，立即通知渲染进程
+            // 通知渲染进程显示下载进度
             if (mainWindow && mainWindow.webContents) {
               mainWindow.webContents.send('update-available', updateInfo);
             }
           }
+          // 当自动更新关闭时，不通知渲染进程
         } else {
           console.log('✅ GitHub API 确认当前已是最新版本');
         }
@@ -391,13 +392,18 @@ app.on('ready', () => {
   // 配置自动更新
   setupAutoUpdater();
   
-  // 应用启动后异步检查更新，不阻塞主进程
+  // 应用启动后根据自动更新设置决定是否检查更新
   setTimeout(() => {
     // 使用Promise.resolve确保异步执行，避免阻塞
     Promise.resolve().then(() => {
-      checkForUpdates().catch(error => {
-        console.error('更新检查失败，但不影响应用启动:', error);
-      });
+      if (autoCheckEnabled) {
+        console.log('自动更新已启用，开始启动时的更新检查');
+        checkForUpdates().catch(error => {
+          console.error('更新检查失败，但不影响应用启动:', error);
+        });
+      } else {
+        console.log('自动更新已关闭，跳过启动时的更新检查');
+      }
     });
   }, 15000); // 延长到15秒，确保应用完全启动
   
@@ -722,9 +728,10 @@ ipcMain.handle('update:check-manual', async () => {
           if (!resolved) {
             resolved = true;
             console.log('electron-updater 发现更新:', info.version);
-            console.log('⚡ 手动检查发现更新，开始静默下载...');
-            // 手动检查时总是开始下载，不立即通知渲染进程
-            // 等下载完成后再通知
+            if (autoCheckEnabled) {
+              console.log('⚡ 手动检查发现更新，开始下载...');
+              // 手动检查时总是开始下载
+            }
             resolve({ updateAvailable: true, updateInfo });
           }
         };
@@ -802,15 +809,16 @@ ipcMain.handle('update:check-manual', async () => {
       
       console.log('GitHub API 发现更新:', latestVersion);
       
-      console.log('⚡ 手动检查发现更新，尝试通过electron-updater检查并下载...');
-      // 对于GitHub API检测到的更新，先让electron-updater检查更新
+      console.log('⚡ 手动检查发现更新，开始下载...');
+      
+      // 手动检查时总是开始下载
       try {
         await autoUpdater.checkForUpdates();
         // electron-updater会自动处理下载逻辑
       } catch (error) {
         console.error('electron-updater检查更新失败:', error);
         // 如果electron-updater失败，直接通知渲染进程
-        if (mainWindow && mainWindow.webContents) {
+        if (mainWindow) {
           mainWindow.webContents.send('update-available', updateInfo);
         }
       }
@@ -893,9 +901,22 @@ ipcMain.handle('app:get-version', () => {
 });
 
 // 设置自动检查更新开关
+// 获取自动更新设置
+ipcMain.handle('update:get-auto-check', () => {
+  return autoCheckEnabled;
+});
+
+// 设置自动更新
 ipcMain.handle('update:set-auto-check', (event, enabled) => {
   autoCheckEnabled = enabled;
   console.log('自动检查更新设置:', enabled ? '开启' : '关闭');
+  return { success: true };
+});
+
+// 初始化自动更新设置（从渲染进程获取用户偏好）
+ipcMain.handle('update:init-auto-check', (event, enabled) => {
+  autoCheckEnabled = enabled;
+  console.log('初始化自动检查更新设置:', enabled ? '开启' : '关闭');
   return { success: true };
 });
 
@@ -1046,7 +1067,6 @@ ipcMain.handle('test:force-download-latest', async () => {
         
         if (mainWindow && mainWindow.webContents) {
           mainWindow.webContents.send('update-downloaded', updateInfo);
-          mainWindow.webContents.send('update-available', updateInfo);
         }
       }, 1000);
     } else {

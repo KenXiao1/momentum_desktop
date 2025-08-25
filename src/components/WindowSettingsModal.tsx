@@ -58,8 +58,8 @@ export const WindowSettingsModal: React.FC<WindowSettingsModalProps> = ({
     }
   };
 
-  const handleSave = () => {
-    userPreferences.setExitBehavior(exitBehavior);
+  const handleSave = async () => {
+    await userPreferences.setExitBehavior(exitBehavior);
     setOriginalBehavior(exitBehavior);
     setHasChanges(false);
     onClose();
@@ -71,7 +71,7 @@ export const WindowSettingsModal: React.FC<WindowSettingsModalProps> = ({
       title: '重置设置'
     });
     if (confirmed) {
-      userPreferences.setExitBehavior('ask');
+      await userPreferences.setExitBehavior('ask');
       setExitBehavior('ask');
       setOriginalBehavior('ask');
       setHasChanges(false);

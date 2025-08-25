@@ -153,8 +153,15 @@ export class LocalFileStorageService {
   }
 
   private async saveSettings(): Promise<void> {
-    const settingsPath = `${this.settings.dataPath}/${DATA_FILES.SETTINGS}`;
-    await window.electronAPI!.storage.writeFile(settingsPath, this.settings);
+    try {
+      const settingsPath = `${this.settings.dataPath}/${DATA_FILES.SETTINGS}`;
+      console.log('正在保存设置到:', settingsPath, this.settings);
+      await window.electronAPI!.storage.writeFile(settingsPath, this.settings);
+      console.log('设置保存成功');
+    } catch (error) {
+      console.error('保存设置失败:', error);
+      throw new Error(`保存设置失败: ${error}`);
+    }
   }
 
   private async migrateData(oldPath: string, newPath: string): Promise<void> {

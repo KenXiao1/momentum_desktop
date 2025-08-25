@@ -1,0 +1,31 @@
+﻿owner: enshulv
+repo: momentum_desktop
+provider: github
+updaterCacheDirName: momentum-desktop-updater
+
+# 开发环境配置
+publishAutoUpdate: false
+
+# 更新服务器配置
+url: https://api.github.com/repos/enshulv/momentum_desktop/releases/latest
+
+# 开发环境下的更新配置
+channels:
+  - latest
+  - beta
+  - alpha
+
+# 自动下载配置
+autoDownload: true
+autoInstallOnAppQuit: true
+
+# 日志配置
+logger:
+  level: info
+  file: updater.log
+
+# 开发环境特殊配置
+dev:
+  enableLogging: true
+  skipUpdateCheck: false
+  mockUpdates: true
