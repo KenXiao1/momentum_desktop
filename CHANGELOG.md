@@ -1,3 +1,9 @@
+## [1.2.6](https://github.com/enshulv/momentum_desktop/compare/v1.2.5...v1.2.6) (2025-09-11)
+
+### 🐛 修复
+
+* reapply local changes after repo reset ([5c0a0e3](https://github.com/enshulv/momentum_desktop/commit/5c0a0e3f9f9e3ac50ce95ec1590641032beff4d5))
+
 ## [1.2.5](https://github.com/enshulv/momentum_desktop/compare/v1.2.4...v1.2.5) (2025-08-25)
 
 ### 🐛 修复
